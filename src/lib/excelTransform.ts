@@ -137,7 +137,11 @@ export async function readExcelFile(file: File): Promise<string[][]> {
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: "binary" });
+        if (!data) {
+          reject(new Error("No se pudo leer el archivo"));
+          return;
+        }
+        const workbook = XLSX.read(data, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
@@ -149,12 +153,13 @@ export async function readExcelFile(file: File): Promise<string[][]> {
         
         resolve(cleanData);
       } catch (error) {
+        console.error("Error parsing Excel:", error);
         reject(error);
       }
     };
     
     reader.onerror = () => reject(new Error("Error leyendo el archivo"));
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   });
 }
 
