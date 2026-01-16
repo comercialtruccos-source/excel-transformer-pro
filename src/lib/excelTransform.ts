@@ -5,31 +5,64 @@ export interface TransformResult {
   transformed: string[][];
 }
 
-// Expande el rango de tallas (ej: "S - L" -> ["S", "M", "L"])
-function expandSizeRange(sizeRange: string): string[] {
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+// Rangos de tallas predefinidos
+const letterSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+const numericSizeRanges = [
+  ["06", "08", "10", "12", "14"],
+  ["16", "18", "20", "22"],
+  ["28", "30", "32", "34", "36"],
+  ["30", "32", "34", "36", "38", "40"],
+];
+
+// Encuentra el rango numérico que contiene ambas tallas
+function findNumericRange(start: string, end: string): string[] | null {
+  const startNorm = start.padStart(2, "0");
+  const endNorm = end.padStart(2, "0");
   
-  // Limpiar y detectar formato
+  for (const range of numericSizeRanges) {
+    const startIdx = range.indexOf(startNorm);
+    const endIdx = range.indexOf(endNorm);
+    if (startIdx !== -1 && endIdx !== -1 && startIdx <= endIdx) {
+      return range.slice(startIdx, endIdx + 1);
+    }
+  }
+  return null;
+}
+
+// Expande el rango de tallas (ej: "S - L" -> ["S", "M", "L"] o "06 - 14" -> ["06", "08", "10", "12", "14"])
+function expandSizeRange(sizeRange: string): string[] {
   const cleaned = sizeRange.trim().toUpperCase();
   
-  // Si contiene un rango (ej: "S - L" o "S-L")
-  const rangeMatch = cleaned.match(/^([A-Z]+)\s*[-–]\s*([A-Z]+)$/);
+  // Detectar rango con guion (ej: "S - L" o "06-14")
+  const rangeMatch = cleaned.match(/^(\d+|[A-Z]+)\s*[-–]\s*(\d+|[A-Z]+)$/);
   
   if (rangeMatch) {
     const startSize = rangeMatch[1];
     const endSize = rangeMatch[2];
     
-    const startIndex = sizes.indexOf(startSize);
-    const endIndex = sizes.indexOf(endSize);
+    // Verificar si son tallas de letras
+    const startLetterIdx = letterSizes.indexOf(startSize);
+    const endLetterIdx = letterSizes.indexOf(endSize);
     
-    if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex) {
-      return sizes.slice(startIndex, endIndex + 1);
+    if (startLetterIdx !== -1 && endLetterIdx !== -1 && startLetterIdx <= endLetterIdx) {
+      return letterSizes.slice(startLetterIdx, endLetterIdx + 1);
+    }
+    
+    // Verificar si son tallas numéricas
+    const numericResult = findNumericRange(startSize, endSize);
+    if (numericResult) {
+      return numericResult;
     }
   }
   
-  // Si es una talla única
-  if (sizes.includes(cleaned)) {
+  // Si es una talla única de letra
+  if (letterSizes.includes(cleaned)) {
     return [cleaned];
+  }
+  
+  // Si es una talla numérica única, devolverla formateada
+  if (/^\d+$/.test(cleaned)) {
+    return [cleaned.padStart(2, "0")];
   }
   
   // Si no reconocemos el formato, devolver como está
