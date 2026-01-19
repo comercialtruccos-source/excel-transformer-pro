@@ -150,7 +150,7 @@ export function transformExcelData(data: string[][]): string[][] {
   
   const { colorCols, refCol, sizeCol } = findColorColumns(headers);
   
-  const result: string[][] = [["REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR"]];
+  const result: string[][] = [["SKU", "REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR"]];
   
   for (const row of rows) {
     const referencia = row[refCol] || "";
@@ -170,7 +170,8 @@ export function transformExcelData(data: string[][]): string[][] {
     for (const size of sizes) {
       for (const color of colors) {
         const colorCode = findColorCode(color);
-        result.push([referencia, size, color, colorCode]);
+        const sku = `${referencia}${size}${colorCode}`;
+        result.push([sku, referencia, size, color, colorCode]);
       }
     }
   }
