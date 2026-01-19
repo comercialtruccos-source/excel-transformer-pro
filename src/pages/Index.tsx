@@ -136,7 +136,16 @@ const Index = () => {
                   Transformar datos
                 </Button>
               ) : (
-                <>
+              <>
+                  <Button 
+                    onClick={handleTransform}
+                    variant="outline"
+                    size="lg"
+                    className="gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Re-transformar
+                  </Button>
                   <Button 
                     onClick={handleDownload}
                     size="lg"
@@ -151,7 +160,6 @@ const Index = () => {
                     size="lg"
                     className="gap-2"
                   >
-                    <RefreshCw className="w-4 h-4" />
                     Nuevo archivo
                   </Button>
                 </>
@@ -169,8 +177,9 @@ const Index = () => {
               {transformedData ? (
                 <DataTable 
                   data={transformedData} 
-                  title="✨ Datos transformados" 
+                  title="✨ Vista previa - Datos transformados" 
                   variant="transformed"
+                  maxRows={20}
                 />
               ) : (
                 <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center p-8 text-center">
