@@ -83,7 +83,7 @@ const Index = () => {
             <FileSpreadsheet className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="font-bold text-lg text-foreground">Excel Transformer</h1>
+            <h1 className="font-bold text-lg text-foreground">Trucco's Jeans - Rappaz</h1>
             <p className="text-xs text-muted-foreground">Convierte formato horizontal a vertical</p>
           </div>
         </div>
