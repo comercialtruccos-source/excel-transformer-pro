@@ -5,6 +5,51 @@ export interface TransformResult {
   transformed: string[][];
 }
 
+// Catálogo de colores (Descripcion -> Codigo)
+let colorCatalog: Map<string, string> = new Map();
+
+// Cargar catálogo de colores desde el CSV
+export async function loadColorCatalog(): Promise<void> {
+  try {
+    const response = await fetch("/data/colors.csv");
+    const text = await response.text();
+    const lines = text.split("\n");
+    
+    colorCatalog.clear();
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const [descripcion, codigo] = line.split(";");
+      if (descripcion && codigo) {
+        // Normalizar: mayúsculas y sin acentos para mejor coincidencia
+        const normalizedDesc = normalizeColorName(descripcion);
+        colorCatalog.set(normalizedDesc, codigo.trim());
+      }
+    }
+    
+    console.log(`Catálogo de colores cargado: ${colorCatalog.size} colores`);
+  } catch (error) {
+    console.error("Error cargando catálogo de colores:", error);
+  }
+}
+
+// Normalizar nombre de color para comparación
+function normalizeColorName(name: string): string {
+  return name
+    .toUpperCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // Eliminar acentos
+}
+
+// Buscar código de color
+function findColorCode(colorName: string): string {
+  const normalized = normalizeColorName(colorName);
+  return colorCatalog.get(normalized) || "";
+}
+
 // Rangos de tallas predefinidos
 const letterSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const numericSizeRanges = [
@@ -105,7 +150,7 @@ export function transformExcelData(data: string[][]): string[][] {
   
   const { colorCols, refCol, sizeCol } = findColorColumns(headers);
   
-  const result: string[][] = [["REFERENCIA", "TALLA", "COLOR"]];
+  const result: string[][] = [["REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR"]];
   
   for (const row of rows) {
     const referencia = row[refCol] || "";
@@ -124,7 +169,8 @@ export function transformExcelData(data: string[][]): string[][] {
     // Generar todas las combinaciones
     for (const size of sizes) {
       for (const color of colors) {
-        result.push([referencia, size, color]);
+        const colorCode = findColorCode(color);
+        result.push([referencia, size, color, colorCode]);
       }
     }
   }

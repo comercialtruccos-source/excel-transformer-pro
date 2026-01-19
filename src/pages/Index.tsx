@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowRight, Download, RefreshCw, FileSpreadsheet, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import DataTable from "@/components/DataTable";
-import { readExcelFile, transformExcelData, exportToExcel } from "@/lib/excelTransform";
+import { readExcelFile, transformExcelData, exportToExcel, loadColorCatalog } from "@/lib/excelTransform";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -11,7 +11,15 @@ const Index = () => {
   const [transformedData, setTransformedData] = useState<string[][] | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
   const { toast } = useToast();
+
+  // Cargar catálogo de colores al iniciar
+  useEffect(() => {
+    loadColorCatalog().then(() => {
+      setCatalogLoaded(true);
+    });
+  }, []);
 
   const handleFileSelect = async (file: File) => {
     setIsLoading(true);
