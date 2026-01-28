@@ -218,3 +218,108 @@ export function exportToExcel(data: string[][], filename: string): void {
   XLSX.utils.book_append_sheet(workbook, worksheet, "Transformado");
   XLSX.writeFile(workbook, filename);
 }
+
+// Shopify CSV Headers (columnas requeridas)
+const SHOPIFY_HEADERS = [
+  "Handle", "Title", "Body (HTML)", "Vendor", "Product Category", "Type", "Tags", "Published",
+  "Option1 Name", "Option1 Value", "Option1 Linked To", "Option2 Name", "Option2 Value", "Option2 Linked To",
+  "Option3 Name", "Option3 Value", "Option3 Linked To", "Variant SKU", "Variant Grams",
+  "Variant Inventory Tracker", "Variant Inventory Qty", "Variant Inventory Policy", "Variant Fulfillment Service",
+  "Variant Price", "Variant Compare At Price", "Variant Requires Shipping", "Variant Taxable",
+  "Variant Barcode", "Image Src", "Image Position", "Image Alt Text", "Gift Card", "Status"
+];
+
+export interface ShopifyConfig {
+  vendor: string;
+  productCategory: string;
+  type: string;
+  tags: string;
+  price: string;
+  published: boolean;
+  description: string;
+}
+
+export function transformToShopifyCSV(transformedData: string[][], config: ShopifyConfig): string[][] {
+  if (!transformedData || transformedData.length < 2) return [SHOPIFY_HEADERS];
+  
+  const rows = transformedData.slice(1); // Skip header
+  const result: string[][] = [SHOPIFY_HEADERS];
+  
+  // Agrupar por referencia para crear productos con variantes
+  const productGroups = new Map<string, typeof rows>();
+  
+  for (const row of rows) {
+    const [sku, referencia, talla, color, colorCode] = row;
+    if (!productGroups.has(referencia)) {
+      productGroups.set(referencia, []);
+    }
+    productGroups.get(referencia)!.push(row);
+  }
+  
+  for (const [referencia, variants] of productGroups) {
+    const handle = referencia.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    
+    variants.forEach((variant, index) => {
+      const [sku, , talla, color, colorCode] = variant;
+      const isFirstVariant = index === 0;
+      
+      const shopifyRow: string[] = [
+        handle, // Handle
+        isFirstVariant ? referencia : "", // Title
+        isFirstVariant ? config.description : "", // Body (HTML)
+        isFirstVariant ? config.vendor : "", // Vendor
+        isFirstVariant ? config.productCategory : "", // Product Category
+        isFirstVariant ? config.type : "", // Type
+        isFirstVariant ? config.tags : "", // Tags
+        isFirstVariant ? (config.published ? "true" : "false") : "", // Published
+        isFirstVariant ? "Color" : "", // Option1 Name
+        color, // Option1 Value
+        "", // Option1 Linked To
+        isFirstVariant ? "Talla" : "", // Option2 Name
+        talla, // Option2 Value
+        "", // Option2 Linked To
+        "", // Option3 Name
+        "", // Option3 Value
+        "", // Option3 Linked To
+        sku, // Variant SKU
+        "1000", // Variant Grams
+        "shopify", // Variant Inventory Tracker
+        "0", // Variant Inventory Qty
+        "deny", // Variant Inventory Policy
+        "manual", // Variant Fulfillment Service
+        config.price, // Variant Price
+        "", // Variant Compare At Price
+        "true", // Variant Requires Shipping
+        "true", // Variant Taxable
+        "", // Variant Barcode
+        "", // Image Src
+        "", // Image Position
+        "", // Image Alt Text
+        "false", // Gift Card
+        "draft", // Status
+      ];
+      
+      result.push(shopifyRow);
+    });
+  }
+  
+  return result;
+}
+
+export function exportToShopifyCSV(data: string[][], filename: string): void {
+  const csvContent = data.map(row => 
+    row.map(cell => {
+      // Escapar comillas y envolver en comillas si contiene comas o comillas
+      if (cell.includes(",") || cell.includes('"') || cell.includes("\n")) {
+        return `"${cell.replace(/"/g, '""')}"`;
+      }
+      return cell;
+    }).join(",")
+  ).join("\n");
+  
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+}
