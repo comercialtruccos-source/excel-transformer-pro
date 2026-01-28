@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, Download, RefreshCw, FileSpreadsheet, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Download, RefreshCw, FileSpreadsheet, Sparkles, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import DataTable from "@/components/DataTable";
@@ -45,7 +46,7 @@ const Index = () => {
 
   const handleTransform = () => {
     if (!originalData) return;
-    
+
     setIsLoading(true);
     setTimeout(() => {
       const result = transformExcelData(originalData);
@@ -78,14 +79,22 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <FileSpreadsheet className="w-5 h-5 text-primary-foreground" />
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+              <FileSpreadsheet className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-bold text-lg text-foreground">Trucco's Jeans - Rappaz</h1>
+              <p className="text-xs text-muted-foreground">Convierte formato horizontal a vertical</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-lg text-foreground">Trucco's Jeans - Rappaz</h1>
-            <p className="text-xs text-muted-foreground">Convierte formato horizontal a vertical</p>
-          </div>
+          <Link to="/shopify">
+            <Button variant="outline" className="gap-2">
+              <ShoppingBag className="w-4 h-4" />
+              Generar CSV Shopify
+            </Button>
+          </Link>
         </div>
       </header>
 
@@ -101,7 +110,7 @@ const Index = () => {
               Transforma tu Excel en segundos
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
-              Convierte datos de formato horizontal (colores en columnas) a formato vertical 
+              Convierte datos de formato horizontal (colores en columnas) a formato vertical
               (una fila por cada combinación de referencia, talla y color).
             </p>
           </div>
@@ -109,9 +118,9 @@ const Index = () => {
 
         {/* Upload Section */}
         <div className="max-w-xl mx-auto mb-8">
-          <FileUpload 
-            onFileSelect={handleFileSelect} 
-            fileName={fileName} 
+          <FileUpload
+            onFileSelect={handleFileSelect}
+            fileName={fileName}
             isLoading={isLoading}
           />
         </div>
@@ -122,8 +131,8 @@ const Index = () => {
             {/* Action Buttons */}
             <div className="flex justify-center gap-3">
               {!transformedData ? (
-                <Button 
-                  onClick={handleTransform} 
+                <Button
+                  onClick={handleTransform}
                   disabled={isLoading}
                   size="lg"
                   className="gap-2"
@@ -136,8 +145,8 @@ const Index = () => {
                   Transformar datos
                 </Button>
               ) : (
-              <>
-                  <Button 
+                <>
+                  <Button
                     onClick={handleTransform}
                     variant="outline"
                     size="lg"
@@ -146,7 +155,7 @@ const Index = () => {
                     <RefreshCw className="w-4 h-4" />
                     Re-transformar
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleDownload}
                     size="lg"
                     className="gap-2"
@@ -154,7 +163,7 @@ const Index = () => {
                     <Download className="w-4 h-4" />
                     Descargar Excel
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleReset}
                     variant="outline"
                     size="lg"
@@ -168,16 +177,16 @@ const Index = () => {
 
             {/* Tables */}
             <div className="grid lg:grid-cols-2 gap-6">
-              <DataTable 
-                data={originalData} 
-                title="📄 Datos originales" 
+              <DataTable
+                data={originalData}
+                title="📄 Datos originales"
                 variant="original"
               />
-              
+
               {transformedData ? (
-                <DataTable 
-                  data={transformedData} 
-                  title="✨ Vista previa - Datos transformados" 
+                <DataTable
+                  data={transformedData}
+                  title="✨ Vista previa - Datos transformados"
                   variant="transformed"
                   maxRows={20}
                 />
