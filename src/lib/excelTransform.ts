@@ -52,6 +52,11 @@ function findColorCode(colorName: string): string {
 
 // Rangos de tallas predefinidos
 const letterSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+// Mapa de conversión de tallas para el resultado final
+const sizeDisplayMap: Record<string, string> = {
+  "XXXL": "3XL",
+};
 const numericSizeRanges = [
   ["06", "08", "10", "12", "14"],
   ["14", "16", "18", "20", "22"],
@@ -168,10 +173,11 @@ export function transformExcelData(data: string[][]): string[][] {
     
     // Generar todas las combinaciones
     for (const size of sizes) {
+      const displaySize = sizeDisplayMap[size] || size;
       for (const color of colors) {
         const colorCode = findColorCode(color);
-        const sku = `${referencia}${size}${colorCode}`;
-        result.push([sku, referencia, size, color, colorCode]);
+        const sku = `${referencia}${displaySize}${colorCode}`;
+        result.push([sku, referencia, displaySize, color, colorCode]);
       }
     }
   }
