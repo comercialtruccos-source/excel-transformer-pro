@@ -11,7 +11,7 @@ let colorCatalog: Map<string, string> = new Map();
 // Cargar catálogo de colores desde el CSV
 export async function loadColorCatalog(): Promise<void> {
   try {
-    const response = await fetch("/data/colors.csv");
+    const response = await fetch("/data/colors.csv?v=" + Date.now());
     const text = await response.text();
     const lines = text.split("\n");
     
