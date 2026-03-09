@@ -177,7 +177,7 @@ export function transformExcelData(data: string[][]): string[][] {
       for (const color of colors) {
         const colorCode = findColorCode(color);
         const sku = `${referencia}${displaySize}${colorCode}`;
-        result.push([sku, referencia, size, color, colorCode]);
+        result.push([sku, referencia, displaySize, color, colorCode]);
       }
     }
   }
