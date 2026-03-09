@@ -52,6 +52,11 @@ function findColorCode(colorName: string): string {
 
 // Rangos de tallas predefinidos
 const letterSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+// Mapa de conversión de tallas para el resultado final
+const sizeDisplayMap: Record<string, string> = {
+  "XXXL": "3XL",
+};
 const numericSizeRanges = [
   ["06", "08", "10", "12", "14"],
   ["14", "16", "18", "20", "22"],
