@@ -125,29 +125,33 @@ function expandSizeRange(sizeRange: string): string[] {
 }
 
 // Detectar columnas de colores (COLOR 1, COLOR 2, etc. o similares)
-function findColorColumns(headers: string[]): { colorCols: number[]; refCol: number; sizeCol: number } {
+function findColorColumns(headers: string[]): { colorCols: number[]; refCol: number; sizeCol: number; nombreCol: number; composicionCol: number } {
   const colorCols: number[] = [];
   let refCol = -1;
   let sizeCol = -1;
+  let nombreCol = -1;
+  let composicionCol = -1;
   
   headers.forEach((header, index) => {
     const upperHeader = header.toUpperCase().trim();
     
     if (upperHeader.includes("COLOR") || upperHeader.includes("COLOUR")) {
       colorCols.push(index);
-    } else if (upperHeader.includes("REFERENCIA") || upperHeader.includes("REF") || upperHeader.includes("SKU") || upperHeader.includes("CODIGO")) {
+    } else if (upperHeader === "REFERENCIA" || upperHeader === "REF" || upperHeader === "SKU" || upperHeader === "CODIGO") {
       refCol = index;
     } else if (upperHeader.includes("TALLA") || upperHeader.includes("SIZE") || upperHeader.includes("SET")) {
       sizeCol = index;
+    } else if (upperHeader === "NOMBRE") {
+      nombreCol = index;
+    } else if (upperHeader === "COMPOSICION" || upperHeader === "COMPOSICIÓN") {
+      composicionCol = index;
     }
   });
   
-  // Si no encontramos referencia, asumimos que es la primera columna
   if (refCol === -1) refCol = 0;
-  // Si no encontramos tallas, asumimos que es la segunda columna
   if (sizeCol === -1) sizeCol = 1;
   
-  return { colorCols, refCol, sizeCol };
+  return { colorCols, refCol, sizeCol, nombreCol, composicionCol };
 }
 
 export function transformExcelData(data: string[][]): string[][] {
@@ -156,16 +160,17 @@ export function transformExcelData(data: string[][]): string[][] {
   const headers = data[0];
   const rows = data.slice(1);
   
-  const { colorCols, refCol, sizeCol } = findColorColumns(headers);
+  const { colorCols, refCol, sizeCol, nombreCol, composicionCol } = findColorColumns(headers);
   
-  const result: string[][] = [["SKU", "REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR"]];
+  const result: string[][] = [["SKU", "REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR", "NOMBRE", "COMPOSICION"]];
   
   for (const row of rows) {
     const referencia = row[refCol] || "";
     const sizeRange = row[sizeCol] || "";
     const sizes = expandSizeRange(sizeRange);
+    const nombre = nombreCol >= 0 ? (row[nombreCol] || "").trim() : "";
+    const composicion = composicionCol >= 0 ? (row[composicionCol] || "").trim() : "";
     
-    // Obtener colores que tienen valor (no vacío y no solo números)
     const colors: string[] = [];
     for (const colIndex of colorCols) {
       const colorValue = row[colIndex]?.trim();
@@ -174,18 +179,36 @@ export function transformExcelData(data: string[][]): string[][] {
       }
     }
     
-    // Generar todas las combinaciones
     for (const size of sizes) {
       const displaySize = sizeDisplayMap[size] || size;
       for (const color of colors) {
         const colorCode = findColorCode(color);
         const sku = `${referencia}${displaySize}${colorCode}`;
-        result.push([sku, referencia, displaySize, color, colorCode]);
+        result.push([sku, referencia, displaySize, color, colorCode, nombre, composicion]);
       }
     }
   }
   
   return result;
+}
+
+// Generar descripción AIDA en HTML
+function generateAIDADescription(nombre: string, composicion: string): string {
+  const nombreCapitalized = nombre
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  
+  const composicionFormatted = composicion
+    .replace(/%/g, "% ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return `<h3>${nombreCapitalized}</h3>
+<p><strong>✨ Eleva tu estilo con esta increíble ${nombreCapitalized}.</strong></p>
+<p>Diseñada para quienes buscan comodidad sin renunciar a la elegancia. Su corte moderno y versátil la convierte en la pieza perfecta para cualquier ocasión, desde un look casual hasta uno más sofisticado.</p>
+<p>Confeccionada en <strong>${composicionFormatted}</strong>, garantiza suavidad al tacto, durabilidad y un ajuste impecable que se adapta a tu cuerpo.</p>
+<p>Renueva tu guardarropa con una prenda que marca la diferencia. ¡No esperes a que se agote!</p>
+<p><strong>🛒 ¡Agrégala a tu carrito ahora y luce espectacular!</strong></p>`;
 }
 
 export async function readExcelFile(file: File): Promise<string[][]> {
@@ -289,7 +312,7 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
   const productGroups = new Map<string, typeof rows>();
   
   for (const row of rows) {
-    const [sku, referencia, talla, color, colorCode] = row;
+    const referencia = row[1];
     if (!productGroups.has(referencia)) {
       productGroups.set(referencia, []);
     }
@@ -300,13 +323,19 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
     const handle = referencia.toLowerCase().replace(/[^a-z0-9]/g, "-");
     
     variants.forEach((variant, index) => {
-      const [sku, , talla, color, colorCode] = variant;
+      const [sku, , talla, color, colorCode, nombre, composicion] = variant;
       const isFirstVariant = index === 0;
+      
+      // Generar descripción AIDA si hay nombre y composición
+      let description = config.description;
+      if (isFirstVariant && nombre && composicion) {
+        description = generateAIDADescription(nombre, composicion);
+      }
       
       const shopifyRow: string[] = [
         handle, // Handle
         isFirstVariant ? referencia : "", // Title
-        isFirstVariant ? config.description : "", // Body (HTML)
+        isFirstVariant ? description : "", // Body (HTML)
         isFirstVariant ? config.vendor : "", // Vendor
         isFirstVariant ? config.productCategory : "", // Product Category
         isFirstVariant ? config.type : "", // Type
