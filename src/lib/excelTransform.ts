@@ -125,29 +125,33 @@ function expandSizeRange(sizeRange: string): string[] {
 }
 
 // Detectar columnas de colores (COLOR 1, COLOR 2, etc. o similares)
-function findColorColumns(headers: string[]): { colorCols: number[]; refCol: number; sizeCol: number } {
+function findColorColumns(headers: string[]): { colorCols: number[]; refCol: number; sizeCol: number; nombreCol: number; composicionCol: number } {
   const colorCols: number[] = [];
   let refCol = -1;
   let sizeCol = -1;
+  let nombreCol = -1;
+  let composicionCol = -1;
   
   headers.forEach((header, index) => {
     const upperHeader = header.toUpperCase().trim();
     
     if (upperHeader.includes("COLOR") || upperHeader.includes("COLOUR")) {
       colorCols.push(index);
-    } else if (upperHeader.includes("REFERENCIA") || upperHeader.includes("REF") || upperHeader.includes("SKU") || upperHeader.includes("CODIGO")) {
+    } else if (upperHeader === "REFERENCIA" || upperHeader === "REF" || upperHeader === "SKU" || upperHeader === "CODIGO") {
       refCol = index;
     } else if (upperHeader.includes("TALLA") || upperHeader.includes("SIZE") || upperHeader.includes("SET")) {
       sizeCol = index;
+    } else if (upperHeader === "NOMBRE") {
+      nombreCol = index;
+    } else if (upperHeader === "COMPOSICION" || upperHeader === "COMPOSICIÓN") {
+      composicionCol = index;
     }
   });
   
-  // Si no encontramos referencia, asumimos que es la primera columna
   if (refCol === -1) refCol = 0;
-  // Si no encontramos tallas, asumimos que es la segunda columna
   if (sizeCol === -1) sizeCol = 1;
   
-  return { colorCols, refCol, sizeCol };
+  return { colorCols, refCol, sizeCol, nombreCol, composicionCol };
 }
 
 export function transformExcelData(data: string[][]): string[][] {
