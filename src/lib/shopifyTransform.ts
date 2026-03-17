@@ -57,6 +57,8 @@ export interface ProductVariant {
   talla: string;
   color: string;
   colorCode: string;
+  nombre: string;
+  composicion: string;
 }
 
 // Catálogo de colores (Descripcion -> Codigo)
