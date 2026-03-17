@@ -21,11 +21,14 @@ export async function loadColorCatalog(): Promise<void> {
       const line = lines[i].trim();
       if (!line) continue;
       
-      const [descripcion, codigo] = line.split(";");
+      // Formato CSV: Codigo,Descripcion2
+      const commaIdx = line.indexOf(",");
+      if (commaIdx === -1) continue;
+      const codigo = line.substring(0, commaIdx).trim();
+      const descripcion = line.substring(commaIdx + 1).trim();
       if (descripcion && codigo) {
-        // Normalizar: mayúsculas y sin acentos para mejor coincidencia
         const normalizedDesc = normalizeColorName(descripcion);
-        colorCatalog.set(normalizedDesc, codigo.trim());
+        colorCatalog.set(normalizedDesc, codigo);
       }
     }
     
