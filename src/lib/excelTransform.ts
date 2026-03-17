@@ -160,16 +160,17 @@ export function transformExcelData(data: string[][]): string[][] {
   const headers = data[0];
   const rows = data.slice(1);
   
-  const { colorCols, refCol, sizeCol } = findColorColumns(headers);
+  const { colorCols, refCol, sizeCol, nombreCol, composicionCol } = findColorColumns(headers);
   
-  const result: string[][] = [["SKU", "REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR"]];
+  const result: string[][] = [["SKU", "REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR", "NOMBRE", "COMPOSICION"]];
   
   for (const row of rows) {
     const referencia = row[refCol] || "";
     const sizeRange = row[sizeCol] || "";
     const sizes = expandSizeRange(sizeRange);
+    const nombre = nombreCol >= 0 ? (row[nombreCol] || "").trim() : "";
+    const composicion = composicionCol >= 0 ? (row[composicionCol] || "").trim() : "";
     
-    // Obtener colores que tienen valor (no vacío y no solo números)
     const colors: string[] = [];
     for (const colIndex of colorCols) {
       const colorValue = row[colIndex]?.trim();
@@ -178,18 +179,36 @@ export function transformExcelData(data: string[][]): string[][] {
       }
     }
     
-    // Generar todas las combinaciones
     for (const size of sizes) {
       const displaySize = sizeDisplayMap[size] || size;
       for (const color of colors) {
         const colorCode = findColorCode(color);
         const sku = `${referencia}${displaySize}${colorCode}`;
-        result.push([sku, referencia, displaySize, color, colorCode]);
+        result.push([sku, referencia, displaySize, color, colorCode, nombre, composicion]);
       }
     }
   }
   
   return result;
+}
+
+// Generar descripción AIDA en HTML
+function generateAIDADescription(nombre: string, composicion: string): string {
+  const nombreCapitalized = nombre
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  
+  const composicionFormatted = composicion
+    .replace(/%/g, "% ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return `<h3>${nombreCapitalized}</h3>
+<p><strong>✨ Eleva tu estilo con esta increíble ${nombreCapitalized}.</strong></p>
+<p>Diseñada para quienes buscan comodidad sin renunciar a la elegancia. Su corte moderno y versátil la convierte en la pieza perfecta para cualquier ocasión, desde un look casual hasta uno más sofisticado.</p>
+<p>Confeccionada en <strong>${composicionFormatted}</strong>, garantiza suavidad al tacto, durabilidad y un ajuste impecable que se adapta a tu cuerpo.</p>
+<p>Renueva tu guardarropa con una prenda que marca la diferencia. ¡No esperes a que se agote!</p>
+<p><strong>🛒 ¡Agrégala a tu carrito ahora y luce espectacular!</strong></p>`;
 }
 
 export async function readExcelFile(file: File): Promise<string[][]> {
