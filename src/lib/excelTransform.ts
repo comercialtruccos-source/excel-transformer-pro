@@ -310,7 +310,7 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
         isFirstVariant ? config.tags : "", // Tags
         isFirstVariant ? (config.published ? "true" : "false") : "", // Published
         isFirstVariant ? "Color" : "", // Option1 Name
-        color, // Option1 Value
+        getShopifyColorName(color), // Option1 Value
         "", // Option1 Linked To
         isFirstVariant ? "Talla" : "", // Option2 Name
         talla, // Option2 Value
