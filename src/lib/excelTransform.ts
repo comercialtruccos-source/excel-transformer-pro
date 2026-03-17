@@ -225,6 +225,37 @@ export function exportToExcel(data: string[][], filename: string): void {
   XLSX.writeFile(workbook, filename);
 }
 
+// Mapa de nombres de color con formato oficial para Shopify
+const shopifyColorDisplayNames: string[] = [
+  "Rojo","Vino tinto","Verde militar","Negro","Rosa","Azul claro","CAMUFLADO","Azul medio","Azul oscuro",
+  "Hielo","Amarillo","Café","Gris claro","Gris oscuro","Blanco","Beige","kaki","Mandarina","Arena",
+  "Marfil","Verde","Morado","Mostaza","Crema","Dorado","Plateado","Cereza","Fucsia","Azul rey",
+  "Berenjena","Terracota","Salmon","Verde claro","Naranja","MELON","SEMILLA","GRIS MEDIO","CARAMELO",
+  "AVELLANA","OCRE","CARMEL","GUAYABA","AGUA MARINA","VERDE JADE","CORAL","VERDE MENTA","LADRILLO",
+  "MAGENTA","Macadamia","Champaña","Canela","Verde oliva","BAMBU","Azul turqueza","TABACO","CAMEL",
+  "MORA","ORQUIDEA","PINK","ROSA PASTEL","ALMENDRA","FUCSIA NEON","NARANJA NEON","VERDE NEON","MALVA",
+  "NATURAL","VERDE MANZANA","CONFITE","ESMERALDA","LIMA","AZUL","HORTENSIA","PISTACHO","CELESTE","LILA",
+  "TURQUESA","MARRON","verde ESMERALDA","IVORY","DURAZNO","RUBOR","AVENA","TAUPE","VERDE LIMON","MOCCA",
+  "COCOA","NUDE","Curcuma","VERDE BOTELLA","GRIS","AZUL COBALTO","VAINILLA","PALO DE ROSA","LAVANDA",
+  "CHOCOLATE","NAVY","AZUL PETROLEO","MORA","MATCHA","PITON CANELA","CEBRA","PITON ALMENDRA","AZUL NUBE",
+  "ESTAMPADO","CACAO","PARDO","DIRTY","PLOMO","ROSADO","UVA","ANIMAL PRINT","ANIMAL PRINT CHOCOLATE",
+  "ANIMAL PRINT KAKI","ANIMAL PRINT NEGRO","ANIMAL PRINT ALMENDRA","ANIMAL PRINT BLANCO",
+  "ANIMAL PRINT CAMEL","ANIMAL PRINT IVORY","ANIMAL PRINT BEIGE","ANIMAL PRINT AVENA",
+  "ANIMAL PRINT GRIS","ANIMAL PRINT MARRON","CEBRA NEGRO","CEBRA BEIGE","CEBRA KAKI",
+  "CEBRA MARRON","CEBRA ALMENDRA"
+];
+
+// Mapa normalizado -> nombre display oficial
+const shopifyColorMap = new Map<string, string>();
+for (const name of shopifyColorDisplayNames) {
+  shopifyColorMap.set(normalizeColorName(name), name);
+}
+
+function getShopifyColorName(color: string): string {
+  const normalized = normalizeColorName(color);
+  return shopifyColorMap.get(normalized) || color;
+}
+
 // Shopify CSV Headers (columnas requeridas)
 const SHOPIFY_HEADERS = [
   "Handle", "Title", "Body (HTML)", "Vendor", "Product Category", "Type", "Tags", "Published",
@@ -279,7 +310,7 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
         isFirstVariant ? config.tags : "", // Tags
         isFirstVariant ? (config.published ? "true" : "false") : "", // Published
         isFirstVariant ? "Color" : "", // Option1 Name
-        color, // Option1 Value
+        getShopifyColorName(color), // Option1 Value
         "", // Option1 Linked To
         isFirstVariant ? "Talla" : "", // Option2 Name
         talla, // Option2 Value
