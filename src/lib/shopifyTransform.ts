@@ -165,28 +165,56 @@ function expandSizeRange(sizeRange: string): string[] {
   return [sizeRange];
 }
 
-// Detectar columnas de colores
-function findColorColumns(headers: string[]): { colorCols: number[]; refCol: number; sizeCol: number } {
+// Detectar columnas
+function findColumns(headers: string[]): { 
+  colorCols: number[]; refCol: number; sizeCol: number; nombreCol: number; composicionCol: number 
+} {
   const colorCols: number[] = [];
   let refCol = -1;
   let sizeCol = -1;
+  let nombreCol = -1;
+  let composicionCol = -1;
   
   headers.forEach((header, index) => {
     const upperHeader = header.toUpperCase().trim();
     
     if (upperHeader.includes("COLOR") || upperHeader.includes("COLOUR")) {
       colorCols.push(index);
-    } else if (upperHeader.includes("REFERENCIA") || upperHeader.includes("REF") || upperHeader.includes("SKU") || upperHeader.includes("CODIGO")) {
+    } else if (upperHeader === "REFERENCIA" || upperHeader === "REF" || upperHeader === "SKU" || upperHeader === "CODIGO") {
       refCol = index;
-    } else if (upperHeader.includes("TALLA") || upperHeader.includes("SIZE") || upperHeader.includes("SET")) {
+    } else if (upperHeader.includes("TALLA") || upperHeader.includes("SIZE") || upperHeader === "SET TALLAS") {
       sizeCol = index;
+    } else if (upperHeader === "NOMBRE") {
+      nombreCol = index;
+    } else if (upperHeader === "COMPOSICION" || upperHeader === "COMPOSICIÓN") {
+      composicionCol = index;
     }
   });
   
   if (refCol === -1) refCol = 0;
   if (sizeCol === -1) sizeCol = 1;
   
-  return { colorCols, refCol, sizeCol };
+  return { colorCols, refCol, sizeCol, nombreCol, composicionCol };
+}
+
+// Generar descripción AIDA en HTML
+function generateAIDADescription(nombre: string, composicion: string): string {
+  const nombreCapitalized = nombre
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  
+  // Formatear composición para legibilidad
+  const composicionFormatted = composicion
+    .replace(/%/g, "% ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return `<h3>${nombreCapitalized}</h3>
+<p><strong>✨ Eleva tu estilo con esta increíble ${nombreCapitalized}.</strong></p>
+<p>Diseñada para quienes buscan comodidad sin renunciar a la elegancia. Su corte moderno y versátil la convierte en la pieza perfecta para cualquier ocasión, desde un look casual hasta uno más sofisticado.</p>
+<p>Confeccionada en <strong>${composicionFormatted}</strong>, garantiza suavidad al tacto, durabilidad y un ajuste impecable que se adapta a tu cuerpo.</p>
+<p>Renueva tu guardarropa con una prenda que marca la diferencia. ¡No esperes a que se agote!</p>
+<p><strong>🛒 ¡Agrégala a tu carrito ahora y luce espectacular!</strong></p>`;
 }
 
 // Generar handle amigable para URL
