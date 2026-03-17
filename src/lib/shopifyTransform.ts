@@ -318,8 +318,16 @@ export function transformToShopifyFormat(
       // Title - solo en primera fila del producto
       row.push(isFirstRow ? generateTitle(firstVariant.referencia, config.titleTemplate) : "");
       
-      // Body (HTML) - solo en primera fila
-      row.push(isFirstRow ? generateBody(firstVariant.referencia, config.bodyTemplate) : "");
+      // Body (HTML) - solo en primera fila, usar AIDA si hay nombre y composición
+      if (isFirstRow) {
+        if (firstVariant.nombre && firstVariant.composicion) {
+          row.push(generateAIDADescription(firstVariant.nombre, firstVariant.composicion));
+        } else {
+          row.push(generateBody(firstVariant.referencia, config.bodyTemplate));
+        }
+      } else {
+        row.push("");
+      }
       
       // Vendor - solo en primera fila
       row.push(isFirstRow ? config.vendor : "");
