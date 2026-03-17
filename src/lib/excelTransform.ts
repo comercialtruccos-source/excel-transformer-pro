@@ -312,7 +312,7 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
   const productGroups = new Map<string, typeof rows>();
   
   for (const row of rows) {
-    const [sku, referencia, talla, color, colorCode] = row;
+    const referencia = row[1];
     if (!productGroups.has(referencia)) {
       productGroups.set(referencia, []);
     }
@@ -323,13 +323,19 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
     const handle = referencia.toLowerCase().replace(/[^a-z0-9]/g, "-");
     
     variants.forEach((variant, index) => {
-      const [sku, , talla, color, colorCode] = variant;
+      const [sku, , talla, color, colorCode, nombre, composicion] = variant;
       const isFirstVariant = index === 0;
+      
+      // Generar descripción AIDA si hay nombre y composición
+      let description = config.description;
+      if (isFirstVariant && nombre && composicion) {
+        description = generateAIDADescription(nombre, composicion);
+      }
       
       const shopifyRow: string[] = [
         handle, // Handle
         isFirstVariant ? referencia : "", // Title
-        isFirstVariant ? config.description : "", // Body (HTML)
+        isFirstVariant ? description : "", // Body (HTML)
         isFirstVariant ? config.vendor : "", // Vendor
         isFirstVariant ? config.productCategory : "", // Product Category
         isFirstVariant ? config.type : "", // Type
