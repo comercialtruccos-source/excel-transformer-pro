@@ -21,11 +21,14 @@ export async function loadColorCatalog(): Promise<void> {
       const line = lines[i].trim();
       if (!line) continue;
       
-      const [descripcion, codigo] = line.split(";");
+      // Formato CSV: Codigo,Descripcion2
+      const commaIdx = line.indexOf(",");
+      if (commaIdx === -1) continue;
+      const codigo = line.substring(0, commaIdx).trim();
+      const descripcion = line.substring(commaIdx + 1).trim();
       if (descripcion && codigo) {
-        // Normalizar: mayúsculas y sin acentos para mejor coincidencia
         const normalizedDesc = normalizeColorName(descripcion);
-        colorCatalog.set(normalizedDesc, codigo.trim());
+        colorCatalog.set(normalizedDesc, codigo);
       }
     }
     
@@ -235,7 +238,7 @@ const shopifyColorDisplayNames: string[] = [
   "MAGENTA","Macadamia","Champaña","Canela","Verde oliva","BAMBU","Azul turqueza","TABACO","CAMEL",
   "MORA","ORQUIDEA","PINK","ROSA PASTEL","ALMENDRA","FUCSIA NEON","NARANJA NEON","VERDE NEON","MALVA",
   "NATURAL","VERDE MANZANA","CONFITE","ESMERALDA","LIMA","AZUL","HORTENSIA","PISTACHO","CELESTE","LILA",
-  "TURQUESA","MARRON","verde ESMERALDA","IVORY","DURAZNO","RUBOR","AVENA","TAUPE","VERDE LIMON","MOCCA",
+  "TURQUESA","MARRON","VERDE ESMERALDA","IVORY","DURAZNO","RUBOR","AVENA","TAUPE","VERDE LIMON","MOCCA",
   "COCOA","NUDE","Curcuma","VERDE BOTELLA","GRIS","AZUL COBALTO","VAINILLA","PALO DE ROSA","LAVANDA",
   "CHOCOLATE","NAVY","AZUL PETROLEO","MORA","MATCHA","PITON CANELA","CEBRA","PITON ALMENDRA","AZUL NUBE",
   "ESTAMPADO","CACAO","PARDO","DIRTY","PLOMO","ROSADO","UVA","ANIMAL PRINT","ANIMAL PRINT CHOCOLATE",
