@@ -25,6 +25,8 @@ const FileUpload = ({ onFileSelect, fileName, isLoading }: FileUploadProps) => {
     if (file) {
       onFileSelect(file);
     }
+    // Reset para permitir seleccionar el mismo archivo otra vez
+    e.target.value = "";
   };
 
   return (
