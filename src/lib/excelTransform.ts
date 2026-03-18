@@ -193,6 +193,25 @@ export function transformExcelData(data: string[][]): string[][] {
   return result;
 }
 
+// Formatea la composición para que sea agradable a la vista (elimina números y el símbolo %)
+export function formatComposicionForTitle(comp: string): string {
+  if (!comp) return "";
+  // Extraer palabras que correspondan a materiales, ignorando números y %
+  const words = comp.match(/[a-zA-ZáéíóúÁÉÍÓÚñÑ]+/g);
+  if (!words) return "";
+  
+  const materials = words
+    .filter(w => w.length > 2) // ignorar posibles conectores cortos si no son materiales
+    .map(w => w.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
+    
+  if (materials.length === 0) return "";
+  if (materials.length === 1) return materials[0];
+  if (materials.length === 2) return `${materials[0]} y ${materials[1]}`;
+  
+  const last = materials.pop();
+  return `${materials.join(", ")} y ${last}`;
+}
+
 // Generar título del producto para Shopify
 function generateProductTitle(nombre: string, referencia: string, composicion: string = ""): string {
   if (!nombre) return referencia;
@@ -211,15 +230,15 @@ function generateProductTitle(nombre: string, referencia: string, composicion: s
   // Tomar la composición como la "descripción" base
   let detalle = "";
   if (composicion) {
-    let compStr = composicion.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-    // Evitamos que sea excesivamente largo en el titulo
-    if (compStr.length > 45) {
-      compStr = compStr.substring(0, 42) + "...";
+    const cleanComp = formatComposicionForTitle(composicion);
+    if (cleanComp) {
+      // Evitamos que sea excesivamente largo en el titulo
+      const finalComp = cleanComp.length > 60 ? cleanComp.substring(0, 57) + "..." : cleanComp;
+      detalle = ` en ${finalComp}`;
     }
-    detalle = ` en ${compStr}`;
   }
   
-  return `${baseTitle}${detalle} Trucco's (Ref: ${referencia.toUpperCase()})`;
+  return `${baseTitle}${detalle} Marca Trucco's`;
 }
 
 // generateAIDADescription importado desde ./aidaDescriptions

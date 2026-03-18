@@ -38,7 +38,7 @@ const defaultConfig: ShopifyConfig = {
     weight: "500",
     imageBaseUrl: "",
     status: "active",
-    titleTemplate: "{nombre} en {composicion} Trucco's (Ref: {referencia})",
+    titleTemplate: "{nombre} en {composicion} Marca Trucco's",
 };
 
 const ShopifyConfigForm = ({ onSubmit, isLoading }: ShopifyConfigFormProps) => {

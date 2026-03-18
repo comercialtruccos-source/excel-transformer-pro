@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { loadColorCatalog } from "./excelTransform";
+import { loadColorCatalog, formatComposicionForTitle } from "./excelTransform";
 import { generateAIDADescription, getModelSize } from "./aidaDescriptions";
 
 // Shopify CSV column headers
@@ -221,11 +221,9 @@ function generateTitle(variant: ProductVariant, template: string): string {
   }
   
   if (template.includes('{composicion}') || template.includes('{COMPOSICION}')) {
-    let compStr = variant.composicion.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-    if (compStr.length > 45) {
-      compStr = compStr.substring(0, 42) + "...";
-    }
-    title = title.replace(/{composicion}/gi, compStr);
+    const cleanComp = formatComposicionForTitle(variant.composicion);
+    const finalComp = cleanComp.length > 60 ? cleanComp.substring(0, 57) + "..." : cleanComp;
+    title = title.replace(/{composicion}/gi, finalComp);
   }
   
   // Limpiar dobles espacios si alguna variable estaba vacía
