@@ -359,7 +359,7 @@ export function transformToShopifyFormat(
       // Body (HTML) - solo en primera fila, usar AIDA si hay nombre y composición
       if (isFirstRow) {
         if (firstVariant.nombre && firstVariant.composicion) {
-          row.push(generateAIDADescription(firstVariant.nombre, firstVariant.composicion));
+          row.push(generateAIDADescription(firstVariant.nombre, firstVariant.composicion, firstVariant.referencia));
         } else {
           row.push(generateBody(firstVariant.referencia, config.bodyTemplate));
         }
