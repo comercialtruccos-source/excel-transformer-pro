@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { generateAIDADescription } from "./aidaDescriptions";
 
 export interface TransformResult {
   original: string[][];
@@ -209,59 +210,7 @@ function generateProductTitle(nombre: string, referencia: string): string {
   return `${nombreCapitalized} Marca Trucco's`;
 }
 
-// Determinar talla de modelo según línea de producto
-function getModelSize(referencia: string): string {
-  const ref = referencia.trim().toUpperCase();
-  if (ref.startsWith("P")) return "XL";
-  if (ref.startsWith("B") || ref.startsWith("T")) return "S";
-  return "08";
-}
-
-// Generar descripción AIDA en HTML según línea de producto
-function generateAIDADescription(nombre: string, composicion: string, referencia: string): string {
-  const nombreLower = nombre
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-
-  const composicionFormatted = composicion
-    .replace(/%/g, "% ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const tallaMod = getModelSize(referencia);
-  const ref = referencia.trim().toUpperCase();
-
-  let atencion = "";
-  let interes = "";
-  let deseo = "";
-  let accion = "";
-
-  if (ref.startsWith("P")) {
-    atencion = `Descubre la ${nombreLower} que celebra cada curva con estilo y actitud.`;
-    interes = `Confeccionada en ${composicionFormatted}, esta prenda ofrece un calce envolvente y cómodo que acompaña cada movimiento. Su diseño moderno y femenino es ideal tanto para el día a día como para una salida especial.`;
-    deseo = `Porque vestir bien no tiene talla. Esta pieza resalta tu silueta con elegancia, te hace sentir segura y refleja la mujer poderosa que eres.`;
-    accion = `Dale a tu guardarropa la pieza que merece y hazla tuya hoy mismo.`;
-  } else if (ref.startsWith("T")) {
-    atencion = `Renueva tu estilo con la ${nombreLower} que marca tendencia esta temporada.`;
-    interes = `Elaborada en ${composicionFormatted}, su textura suave y su corte contemporáneo la convierten en una prenda versátil para cualquier ocasión. Combínala de mil formas y siempre lucirás impecable.`;
-    deseo = `Diseñada para mujeres que buscan sentirse cómodas sin renunciar a la sofisticación. Una pieza que realza tu figura y refleja tu personalidad.`;
-    accion = `Descubre cómo se ve el estilo perfecto y agrégala a tu colección.`;
-  } else {
-    atencion = `Eleva tu look con la ${nombreLower} que toda mujer moderna necesita en su armario.`;
-    interes = `Su tejido en ${composicionFormatted} garantiza suavidad al tacto y un ajuste que se adapta a tu cuerpo con naturalidad. Una prenda pensada para lucir increíble en cualquier momento del día.`;
-    deseo = `Siente la confianza de llevar una pieza que resalta lo mejor de ti. Versatilidad, estilo y feminidad en una sola prenda.`;
-    accion = `No dejes pasar esta pieza clave. Hazla parte de tu estilo hoy.`;
-  }
-
-  return `<p>${atencion}</p>
-<p>${interes}</p>
-<p>${deseo}</p>
-<p>${accion}</p>
-<br>
-<p>REF: ${referencia}.</p>
-<p>Elaborado en: ${composicionFormatted}</p>
-<p>La Modelo usa una prenda talla ${tallaMod}</p>`;
-}
+// generateAIDADescription importado desde ./aidaDescriptions
 
 export async function readExcelFile(file: File): Promise<string[][]> {
   return new Promise((resolve, reject) => {
