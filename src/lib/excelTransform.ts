@@ -192,6 +192,23 @@ export function transformExcelData(data: string[][]): string[][] {
   return result;
 }
 
+// Generar título del producto para Shopify
+function generateProductTitle(nombre: string, referencia: string): string {
+  if (!nombre) return referencia;
+  
+  const nombreCapitalized = nombre
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  
+  const refPrefix = referencia.charAt(0).toUpperCase();
+  
+  if (refPrefix === "P") {
+    return `${nombreCapitalized} Plus Size Marca Trucco's`;
+  }
+  
+  return `${nombreCapitalized} Marca Trucco's`;
+}
+
 // Generar descripción AIDA en HTML
 function generateAIDADescription(nombre: string, composicion: string): string {
   const nombreCapitalized = nombre
@@ -332,9 +349,12 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
         description = generateAIDADescription(nombre, composicion);
       }
       
+      // Generar título del producto basado en nombre y referencia
+      const productTitle = isFirstVariant ? generateProductTitle(nombre, referencia) : "";
+      
       const shopifyRow: string[] = [
         handle, // Handle
-        isFirstVariant ? referencia : "", // Title
+        productTitle, // Title
         isFirstVariant ? description : "", // Body (HTML)
         isFirstVariant ? config.vendor : "", // Vendor
         isFirstVariant ? config.productCategory : "", // Product Category
