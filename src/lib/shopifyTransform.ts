@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { loadColorCatalog } from "./excelTransform";
+import { generateAIDADescription, getModelSize } from "./aidaDescriptions";
 
 // Shopify CSV column headers
 export const SHOPIFY_HEADERS = [
