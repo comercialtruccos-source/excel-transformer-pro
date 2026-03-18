@@ -212,8 +212,24 @@ function generateHandle(referencia: string): string {
 }
 
 // Generar título del producto
-function generateTitle(referencia: string, template: string): string {
-  return template.replace(/{referencia}/gi, referencia);
+function generateTitle(variant: ProductVariant, template: string): string {
+  let title = template.replace(/{referencia}/gi, variant.referencia);
+  
+  if (template.includes('{nombre}') || template.includes('{NOMBRE}')) {
+    const nombreCap = variant.nombre.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+    title = title.replace(/{nombre}/gi, nombreCap);
+  }
+  
+  if (template.includes('{composicion}') || template.includes('{COMPOSICION}')) {
+    let compStr = variant.composicion.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+    if (compStr.length > 45) {
+      compStr = compStr.substring(0, 42) + "...";
+    }
+    title = title.replace(/{composicion}/gi, compStr);
+  }
+  
+  // Limpiar dobles espacios si alguna variable estaba vacía
+  return title.replace(/\s{2,}/g, ' ').trim();
 }
 
 // Generar descripción HTML
@@ -299,7 +315,7 @@ export function transformToShopifyFormat(
       row.push(handle);
       
       // Title - solo en primera fila del producto
-      row.push(isFirstRow ? generateTitle(firstVariant.referencia, config.titleTemplate) : "");
+      row.push(isFirstRow ? generateTitle(firstVariant, config.titleTemplate) : "");
       
       // Body (HTML) - solo en primera fila, usar AIDA si hay nombre y composición
       if (isFirstRow) {
@@ -385,7 +401,7 @@ export function transformToShopifyFormat(
       row.push(isFirstRow ? "1" : "");
       
       // Image Alt Text
-      row.push(isFirstRow ? generateTitle(firstVariant.referencia, config.titleTemplate) : "");
+      row.push(isFirstRow ? generateTitle(firstVariant, config.titleTemplate) : "");
       
       // Status
       row.push(isFirstRow ? config.status : "");

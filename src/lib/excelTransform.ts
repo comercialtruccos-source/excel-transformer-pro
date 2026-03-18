@@ -194,7 +194,7 @@ export function transformExcelData(data: string[][]): string[][] {
 }
 
 // Generar título del producto para Shopify
-function generateProductTitle(nombre: string, referencia: string): string {
+function generateProductTitle(nombre: string, referencia: string, composicion: string = ""): string {
   if (!nombre) return referencia;
   
   const nombreCapitalized = nombre
@@ -203,11 +203,23 @@ function generateProductTitle(nombre: string, referencia: string): string {
   
   const refPrefix = referencia.charAt(0).toUpperCase();
   
+  let baseTitle = nombreCapitalized;
   if (refPrefix === "P") {
-    return `${nombreCapitalized} Plus Size Marca Trucco's`;
+    baseTitle += " Plus Size";
+  }
+
+  // Tomar la composición como la "descripción" base
+  let detalle = "";
+  if (composicion) {
+    let compStr = composicion.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+    // Evitamos que sea excesivamente largo en el titulo
+    if (compStr.length > 45) {
+      compStr = compStr.substring(0, 42) + "...";
+    }
+    detalle = ` en ${compStr}`;
   }
   
-  return `${nombreCapitalized} Marca Trucco's`;
+  return `${baseTitle}${detalle} Trucco's (Ref: ${referencia.toUpperCase()})`;
 }
 
 // generateAIDADescription importado desde ./aidaDescriptions
@@ -333,8 +345,8 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
         description = generateAIDADescription(nombre, composicion, referencia);
       }
       
-      // Generar título del producto basado en nombre y referencia
-      const productTitle = isFirstVariant ? generateProductTitle(nombre, referencia) : "";
+      // Generar título del producto basado en nombre, referencia y composición
+      const productTitle = isFirstVariant ? generateProductTitle(nombre, referencia, composicion) : "";
       
       const shopifyRow: string[] = [
         handle, // Handle

@@ -38,7 +38,7 @@ const defaultConfig: ShopifyConfig = {
     weight: "500",
     imageBaseUrl: "",
     status: "active",
-    titleTemplate: "{referencia}",
+    titleTemplate: "{nombre} en {composicion} Trucco's (Ref: {referencia})",
 };
 
 const ShopifyConfigForm = ({ onSubmit, isLoading }: ShopifyConfigFormProps) => {
@@ -105,7 +105,7 @@ const ShopifyConfigForm = ({ onSubmit, isLoading }: ShopifyConfigFormProps) => {
                                 placeholder="Usa {referencia} para insertar la referencia"
                             />
                             <p className="text-xs text-muted-foreground">
-                                Usa {"{referencia}"} para incluir la referencia del producto
+                                Usa {"{referencia}"}, {"{nombre}"} y {"{composicion}"} para personalizar el título
                             </p>
                         </div>
 
