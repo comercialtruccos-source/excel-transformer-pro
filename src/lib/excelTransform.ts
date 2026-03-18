@@ -381,7 +381,7 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
       // Generar descripción AIDA si hay nombre y composición
       let description = config.description;
       if (isFirstVariant && nombre && composicion) {
-        description = generateAIDADescription(nombre, composicion);
+        description = generateAIDADescription(nombre, composicion, referencia);
       }
       
       // Generar título del producto basado en nombre y referencia
