@@ -332,9 +332,12 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
         description = generateAIDADescription(nombre, composicion);
       }
       
+      // Generar título del producto basado en nombre y referencia
+      const productTitle = isFirstVariant ? generateProductTitle(nombre, referencia) : "";
+      
       const shopifyRow: string[] = [
         handle, // Handle
-        isFirstVariant ? referencia : "", // Title
+        productTitle, // Title
         isFirstVariant ? description : "", // Body (HTML)
         isFirstVariant ? config.vendor : "", // Vendor
         isFirstVariant ? config.productCategory : "", // Product Category
