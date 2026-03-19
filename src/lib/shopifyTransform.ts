@@ -211,23 +211,35 @@ function generateHandle(referencia: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-// Generar título del producto
-function generateTitle(variant: ProductVariant, template: string): string {
-  let title = template.replace(/{referencia}/gi, variant.referencia);
-  
-  if (template.includes('{nombre}') || template.includes('{NOMBRE}')) {
-    const nombreCap = variant.nombre.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
-    title = title.replace(/{nombre}/gi, nombreCap);
+// Generar título del producto - optimizado por línea
+function generateTitle(variant: ProductVariant, _template: string): string {
+  const ref = variant.referencia.trim().toUpperCase();
+  const nombreCap = variant.nombre
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
+
+  // Si no hay nombre, usar referencia como fallback
+  if (!nombreCap) {
+    const suffix = ref.startsWith("P") ? "Plus Size Marca Trucco's" : "Marca Trucco's";
+    return `${variant.referencia} ${suffix}`;
   }
-  
-  if (template.includes('{composicion}') || template.includes('{COMPOSICION}')) {
-    const cleanComp = formatComposicionForTitle(variant.composicion);
-    const finalComp = cleanComp.length > 60 ? cleanComp.substring(0, 57) + "..." : cleanComp;
-    title = title.replace(/{composicion}/gi, finalComp);
+
+  // Composición limpia para título
+  const cleanComp = formatComposicionForTitle(variant.composicion);
+
+  // Sufijo según línea de producto
+  const suffix = ref.startsWith("P") ? "Plus Size Marca Trucco's" : "Marca Trucco's";
+
+  // Construir título: Nombre + "en" composición (si hay) + sufijo
+  let title = nombreCap;
+  if (cleanComp) {
+    const shortComp = cleanComp.length > 40 ? cleanComp.substring(0, 37) + "..." : cleanComp;
+    title += ` en ${shortComp}`;
   }
-  
-  // Limpiar dobles espacios si alguna variable estaba vacía
-  return title.replace(/\s{2,}/g, ' ').trim();
+  title += ` ${suffix}`;
+
+  return title;
 }
 
 // Generar descripción HTML
