@@ -259,8 +259,8 @@ export function extractVariants(data: string[][]): ProductVariant[] {
   const variants: ProductVariant[] = [];
   
   for (const row of rows) {
-    const referencia = row[refCol] || "";
-    const sizeRange = row[sizeCol] || "";
+    const referencia = (row[refCol] || "").trim();
+    const sizeRange = (row[sizeCol] || "").trim();
     const sizes = expandSizeRange(sizeRange);
     const nombre = nombreCol >= 0 ? (row[nombreCol] || "").trim() : "";
     const composicion = composicionCol >= 0 ? (row[composicionCol] || "").trim() : "";
@@ -274,9 +274,10 @@ export function extractVariants(data: string[][]): ProductVariant[] {
     }
     
     for (const size of sizes) {
+      const cleanSize = size.trim();
       for (const color of colors) {
         const colorCode = findColorCode(color);
-        const sku = `${referencia}${size}${colorCode}`;
+        const sku = `${referencia}${cleanSize}${colorCode}`;
         const handle = generateHandle(referencia);
         
         variants.push({
@@ -284,7 +285,7 @@ export function extractVariants(data: string[][]): ProductVariant[] {
           title: referencia,
           sku,
           referencia,
-          talla: size,
+          talla: cleanSize,
           color,
           colorCode,
           nombre,
