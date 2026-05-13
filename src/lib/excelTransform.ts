@@ -44,6 +44,7 @@ function normalizeColorName(name: string): string {
   return name
     .toUpperCase()
     .trim()
+    .replace(/\s+/g, "") // Eliminar todos los espacios internos
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, ""); // Eliminar acentos
 }
