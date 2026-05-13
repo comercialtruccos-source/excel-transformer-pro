@@ -166,8 +166,8 @@ export function transformExcelData(data: string[][]): string[][] {
   const result: string[][] = [["SKU", "REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR", "NOMBRE", "COMPOSICION"]];
   
   for (const row of rows) {
-    const referencia = row[refCol] || "";
-    const sizeRange = row[sizeCol] || "";
+    const referencia = (row[refCol] || "").trim();
+    const sizeRange = (row[sizeCol] || "").trim();
     const sizes = expandSizeRange(sizeRange);
     const nombre = nombreCol >= 0 ? (row[nombreCol] || "").trim() : "";
     const composicion = composicionCol >= 0 ? (row[composicionCol] || "").trim() : "";
@@ -181,7 +181,7 @@ export function transformExcelData(data: string[][]): string[][] {
     }
     
     for (const size of sizes) {
-      const displaySize = sizeDisplayMap[size] || size;
+      const displaySize = (sizeDisplayMap[size] || size).trim();
       for (const color of colors) {
         const colorCode = findColorCode(color);
         const sku = `${referencia}${displaySize}${colorCode}`;
