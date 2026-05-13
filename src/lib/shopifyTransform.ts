@@ -96,6 +96,7 @@ function normalizeColorName(name: string): string {
   return name
     .toUpperCase()
     .trim()
+    .replace(/\s+/g, "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
