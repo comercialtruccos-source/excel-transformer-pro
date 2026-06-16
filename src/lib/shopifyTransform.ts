@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { loadColorCatalog, formatComposicionForTitle } from "./excelTransform";
 import { generateAIDADescription, getModelSize } from "./aidaDescriptions";
+import { fixSpanishOrthography } from "./spanishOrthography";
 
 // Shopify CSV column headers
 export const SHOPIFY_HEADERS = [
@@ -216,10 +217,12 @@ function generateHandle(referencia: string): string {
 // Generar título del producto - optimizado por línea
 function generateTitle(variant: ProductVariant, _template: string): string {
   const ref = variant.referencia.trim().toUpperCase();
-  const nombreCap = variant.nombre
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .trim();
+  const nombreCap = fixSpanishOrthography(
+    variant.nombre
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim()
+  );
 
   // Si no hay nombre, usar referencia como fallback
   if (!nombreCap) {
@@ -228,7 +231,7 @@ function generateTitle(variant: ProductVariant, _template: string): string {
   }
 
   // Composición limpia para título
-  const cleanComp = formatComposicionForTitle(variant.composicion);
+  const cleanComp = fixSpanishOrthography(formatComposicionForTitle(variant.composicion));
 
   // Sufijo según línea de producto
   const suffix = ref.startsWith("P") ? "Plus Size Marca Trucco's" : "Marca Trucco's";

@@ -1,5 +1,6 @@
 // Generador de descripciones AIDA únicas para cada producto
 // Usa múltiples variaciones por bloque y un hash del nombre+referencia para seleccionar
+import { fixSpanishOrthography } from "./spanishOrthography";
 
 // Hash simple para generar un índice determinístico por producto
 function hashString(str: string): number {
@@ -160,14 +161,18 @@ const accionP = [
 ];
 
 export function generateAIDADescription(nombre: string, composicion: string, referencia: string): string {
-  const nombreLower = nombre
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const nombreLower = fixSpanishOrthography(
+    nombre
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 
-  const composicionFormatted = composicion
-    .replace(/%/g, "% ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const composicionFormatted = fixSpanishOrthography(
+    composicion
+      .replace(/%/g, "% ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 
   const tallaMod = getModelSize(referencia);
   const ref = referencia.trim().toUpperCase();
