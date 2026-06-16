@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { generateAIDADescription } from "./aidaDescriptions";
+import { fixSpanishOrthography } from "./spanishOrthography";
 
 export interface TransformResult {
   original: string[][];
@@ -218,9 +219,11 @@ export function formatComposicionForTitle(comp: string): string {
 function generateProductTitle(nombre: string, referencia: string, composicion: string = ""): string {
   if (!nombre) return referencia;
   
-  const nombreCapitalized = nombre
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const nombreCapitalized = fixSpanishOrthography(
+    nombre
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
   
   const refPrefix = referencia.charAt(0).toUpperCase();
   
@@ -232,7 +235,7 @@ function generateProductTitle(nombre: string, referencia: string, composicion: s
   // Tomar la composición como la "descripción" base
   let detalle = "";
   if (composicion) {
-    const cleanComp = formatComposicionForTitle(composicion);
+    const cleanComp = fixSpanishOrthography(formatComposicionForTitle(composicion));
     if (cleanComp) {
       // Evitamos que sea excesivamente largo en el titulo
       const finalComp = cleanComp.length > 60 ? cleanComp.substring(0, 57) + "..." : cleanComp;
