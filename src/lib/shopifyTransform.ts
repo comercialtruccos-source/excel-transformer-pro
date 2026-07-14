@@ -215,7 +215,7 @@ function generateHandle(referencia: string): string {
 }
 
 // Generar título del producto - optimizado por línea
-function generateTitle(variant: ProductVariant, _template: string): string {
+function generateTitle(variant: ProductVariant, _template: string, vendor: string = ""): string {
   const ref = variant.referencia.trim().toUpperCase();
   const nombreCap = fixSpanishOrthography(
     variant.nombre
@@ -224,25 +224,32 @@ function generateTitle(variant: ProductVariant, _template: string): string {
       .trim()
   );
 
+  const isTruccos = /trucco/i.test(vendor);
+
   // Si no hay nombre, usar referencia como fallback
   if (!nombreCap) {
-    const suffix = ref.startsWith("P") ? "Plus Size Marca Trucco's" : "Marca Trucco's";
-    return `${variant.referencia} ${suffix}`;
+    if (isTruccos) {
+      const suffix = ref.startsWith("P") ? "Plus Size Marca Trucco's" : "Marca Trucco's";
+      return `${variant.referencia} ${suffix}`;
+    }
+    return ref.startsWith("P") ? `${variant.referencia} Plus Size` : variant.referencia;
   }
 
   // Composición limpia para título
   const cleanComp = fixSpanishOrthography(formatComposicionForTitle(variant.composicion));
 
-  // Sufijo según línea de producto
-  const suffix = ref.startsWith("P") ? "Plus Size Marca Trucco's" : "Marca Trucco's";
-
-  // Construir título: Nombre + "en" composición (si hay) + sufijo
+  // Construir título: Nombre + "en" composición (si hay) + sufijo opcional
   let title = nombreCap;
+  if (ref.startsWith("P")) {
+    title += " Plus Size";
+  }
   if (cleanComp) {
     const shortComp = cleanComp.length > 40 ? cleanComp.substring(0, 37) + "..." : cleanComp;
     title += ` en ${shortComp}`;
   }
-  title += ` ${suffix}`;
+  if (isTruccos) {
+    title += " Marca Trucco's";
+  }
 
   return title;
 }
@@ -331,7 +338,7 @@ export function transformToShopifyFormat(
       row.push(handle);
       
       // Title - solo en primera fila del producto
-      row.push(isFirstRow ? generateTitle(firstVariant, config.titleTemplate) : "");
+      row.push(isFirstRow ? generateTitle(firstVariant, config.titleTemplate, config.vendor) : "");
       
       // Body (HTML) - solo en primera fila, usar AIDA si hay nombre y composición
       if (isFirstRow) {
@@ -417,7 +424,7 @@ export function transformToShopifyFormat(
       row.push(isFirstRow ? "1" : "");
       
       // Image Alt Text
-      row.push(isFirstRow ? generateTitle(firstVariant, config.titleTemplate) : "");
+      row.push(isFirstRow ? generateTitle(firstVariant, config.titleTemplate, config.vendor) : "");
       
       // Status
       row.push(isFirstRow ? config.status : "");
