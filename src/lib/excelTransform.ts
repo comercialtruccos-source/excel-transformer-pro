@@ -216,8 +216,10 @@ export function formatComposicionForTitle(comp: string): string {
 }
 
 // Generar título del producto para Shopify
-function generateProductTitle(nombre: string, referencia: string, composicion: string = ""): string {
+function generateProductTitle(nombre: string, referencia: string, composicion: string = "", vendor: string = ""): string {
   if (!nombre) return referencia;
+
+  const isTruccos = /trucco/i.test(vendor);
   
   const nombreCapitalized = fixSpanishOrthography(
     nombre
@@ -243,7 +245,7 @@ function generateProductTitle(nombre: string, referencia: string, composicion: s
     }
   }
   
-  return `${baseTitle}${detalle} Marca Trucco's`;
+  return `${baseTitle}${detalle}${isTruccos ? " Marca Trucco's" : ""}`;
 }
 
 // generateAIDADescription importado desde ./aidaDescriptions
@@ -370,7 +372,7 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
       }
       
       // Generar título del producto basado en nombre, referencia y composición
-      const productTitle = isFirstVariant ? generateProductTitle(nombre, referencia, composicion) : "";
+      const productTitle = isFirstVariant ? generateProductTitle(nombre, referencia, composicion, config.vendor) : "";
       
       const shopifyRow: string[] = [
         handle, // Handle
