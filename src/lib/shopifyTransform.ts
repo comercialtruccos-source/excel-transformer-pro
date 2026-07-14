@@ -5,34 +5,63 @@ import { fixSpanishOrthography } from "./spanishOrthography";
 
 // Shopify CSV column headers
 export const SHOPIFY_HEADERS = [
-  "Handle",
   "Title",
-  "Body (HTML)",
+  "URL handle",
+  "Description",
   "Vendor",
-  "Product Category",
+  "Product category",
   "Type",
   "Tags",
-  "Published",
-  "Option1 Name",
-  "Option1 Value",
-  "Option2 Name",
-  "Option2 Value",
-  "Option3 Name",
-  "Option3 Value",
-  "Variant SKU",
-  "Variant Grams",
-  "Variant Inventory Tracker",
-  "Variant Inventory Qty",
-  "Variant Inventory Policy",
-  "Variant Fulfillment Service",
-  "Variant Price",
-  "Variant Compare At Price",
-  "Variant Requires Shipping",
-  "Variant Taxable",
-  "Image Src",
-  "Image Position",
-  "Image Alt Text",
+  "Published on online store",
   "Status",
+  "SKU",
+  "Barcode",
+  "Option1 name",
+  "Option1 value",
+  "Option1 Linked To",
+  "Option2 name",
+  "Option2 value",
+  "Option2 Linked To",
+  "Option3 name",
+  "Option3 value",
+  "Option3 Linked To",
+  "Price",
+  "Compare-at price",
+  "Cost per item",
+  "Charge tax",
+  "Tax code",
+  "Unit price total measure",
+  "Unit price total measure unit",
+  "Unit price base measure",
+  "Unit price base measure unit",
+  "Inventory tracker",
+  "Inventory quantity",
+  "Continue selling when out of stock",
+  "Weight value (grams)",
+  "Weight unit for display",
+  "Requires shipping",
+  "Fulfillment service",
+  "Product image URL",
+  "Image position",
+  "Image alt text",
+  "Variant image URL",
+  "Gift card",
+  "SEO title",
+  "SEO description",
+  "Color (product.metafields.shopify.color-pattern)",
+  "Google Shopping / Google product category",
+  "Google Shopping / Gender",
+  "Google Shopping / Age group",
+  "Google Shopping / Manufacturer part number (MPN)",
+  "Google Shopping / Ad group name",
+  "Google Shopping / Ads labels",
+  "Google Shopping / Condition",
+  "Google Shopping / Custom product",
+  "Google Shopping / Custom label 0",
+  "Google Shopping / Custom label 1",
+  "Google Shopping / Custom label 2",
+  "Google Shopping / Custom label 3",
+  "Google Shopping / Custom label 4",
 ];
 
 export interface ShopifyConfig {
@@ -330,105 +359,85 @@ export function transformToShopifyFormat(
   for (const [handle, productVariants] of productMap) {
     const firstVariant = productVariants[0];
     let isFirstRow = true;
-    
+
+    const productTitle = generateTitle(firstVariant, config.titleTemplate, config.vendor);
+    const productDescription =
+      firstVariant.nombre && firstVariant.composicion
+        ? generateAIDADescription(firstVariant.nombre, firstVariant.composicion, firstVariant.referencia)
+        : generateBody(firstVariant.referencia, config.bodyTemplate);
+    const imageUrl = config.imageBaseUrl
+      ? `${config.imageBaseUrl}${firstVariant.referencia}.jpg`
+      : "";
+    // SEO description: texto plano (sin HTML) truncado a ~160 chars
+    const seoDescription = productDescription
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .substring(0, 160);
+
     for (const variant of productVariants) {
-      const row: string[] = [];
-      
-      // Handle
-      row.push(handle);
-      
-      // Title - solo en primera fila del producto
-      row.push(isFirstRow ? generateTitle(firstVariant, config.titleTemplate, config.vendor) : "");
-      
-      // Body (HTML) - solo en primera fila, usar AIDA si hay nombre y composición
-      if (isFirstRow) {
-        if (firstVariant.nombre && firstVariant.composicion) {
-          row.push(generateAIDADescription(firstVariant.nombre, firstVariant.composicion, firstVariant.referencia));
-        } else {
-          row.push(generateBody(firstVariant.referencia, config.bodyTemplate));
-        }
-      } else {
-        row.push("");
-      }
-      
-      // Vendor - solo en primera fila
-      row.push(isFirstRow ? config.vendor : "");
-      
-      // Product Category - solo en primera fila
-      row.push(isFirstRow ? "" : "");
-      
-      // Type - solo en primera fila
-      row.push(isFirstRow ? config.productType : "");
-      
-      // Tags - solo en primera fila
-      row.push(isFirstRow ? config.tags : "");
-      
-      // Published - solo en primera fila
-      row.push(isFirstRow ? (config.published ? "TRUE" : "FALSE") : "");
-      
-      // Option1 Name (Talla)
-      row.push(isFirstRow ? "Talla" : "");
-      
-      // Option1 Value
-      row.push(variant.talla);
-      
-      // Option2 Name (Color)
-      row.push(isFirstRow ? "Color" : "");
-      
-      // Option2 Value
-      row.push(variant.color);
-      
-      // Option3 Name
-      row.push("");
-      
-      // Option3 Value
-      row.push("");
-      
-      // Variant SKU
-      row.push(variant.sku);
-      
-      // Variant Grams
-      row.push(config.weight || "0");
-      
-      // Variant Inventory Tracker
-      row.push("shopify");
-      
-      // Variant Inventory Qty
-      row.push(config.inventoryQty || "0");
-      
-      // Variant Inventory Policy
-      row.push(config.inventoryPolicy);
-      
-      // Variant Fulfillment Service
-      row.push("manual");
-      
-      // Variant Price
-      row.push(config.price);
-      
-      // Variant Compare At Price
-      row.push(config.compareAtPrice || "");
-      
-      // Variant Requires Shipping
-      row.push("TRUE");
-      
-      // Variant Taxable
-      row.push("TRUE");
-      
-      // Image Src - solo en primera fila del producto
-      const imageUrl = config.imageBaseUrl 
-        ? `${config.imageBaseUrl}${firstVariant.referencia}.jpg`
-        : "";
-      row.push(isFirstRow ? imageUrl : "");
-      
-      // Image Position
-      row.push(isFirstRow ? "1" : "");
-      
-      // Image Alt Text
-      row.push(isFirstRow ? generateTitle(firstVariant, config.titleTemplate, config.vendor) : "");
-      
-      // Status
-      row.push(isFirstRow ? config.status : "");
-      
+      const continueSelling = config.inventoryPolicy === "continue" ? "TRUE" : "FALSE";
+
+      const row: string[] = [
+        isFirstRow ? productTitle : "",                    // Title
+        handle,                                             // URL handle
+        isFirstRow ? productDescription : "",              // Description
+        isFirstRow ? config.vendor : "",                   // Vendor
+        "",                                                 // Product category
+        isFirstRow ? config.productType : "",              // Type
+        isFirstRow ? config.tags : "",                     // Tags
+        isFirstRow ? (config.published ? "TRUE" : "FALSE") : "", // Published on online store
+        isFirstRow ? config.status : "",                   // Status
+        variant.sku,                                        // SKU
+        "",                                                 // Barcode
+        isFirstRow ? "Talla" : "",                         // Option1 name
+        variant.talla,                                      // Option1 value
+        "",                                                 // Option1 Linked To
+        isFirstRow ? "Color" : "",                         // Option2 name
+        variant.color,                                      // Option2 value
+        "",                                                 // Option2 Linked To
+        "",                                                 // Option3 name
+        "",                                                 // Option3 value
+        "",                                                 // Option3 Linked To
+        config.price,                                       // Price
+        config.compareAtPrice || "",                        // Compare-at price
+        "",                                                 // Cost per item
+        "TRUE",                                             // Charge tax
+        "",                                                 // Tax code
+        "",                                                 // Unit price total measure
+        "",                                                 // Unit price total measure unit
+        "",                                                 // Unit price base measure
+        "",                                                 // Unit price base measure unit
+        "shopify",                                          // Inventory tracker
+        config.inventoryQty || "0",                         // Inventory quantity
+        continueSelling,                                    // Continue selling when out of stock
+        config.weight || "0",                               // Weight value (grams)
+        "g",                                                // Weight unit for display
+        "TRUE",                                             // Requires shipping
+        "manual",                                           // Fulfillment service
+        isFirstRow ? imageUrl : "",                         // Product image URL
+        isFirstRow ? "1" : "",                              // Image position
+        isFirstRow ? productTitle : "",                     // Image alt text
+        "",                                                 // Variant image URL
+        "FALSE",                                            // Gift card
+        isFirstRow ? productTitle : "",                     // SEO title
+        isFirstRow ? seoDescription : "",                   // SEO description
+        "",                                                 // Color (metafield)
+        "",                                                 // Google product category
+        "",                                                 // Gender
+        "",                                                 // Age group
+        "",                                                 // MPN
+        "",                                                 // Ad group name
+        "",                                                 // Ads labels
+        "",                                                 // Condition
+        "",                                                 // Custom product
+        "",                                                 // Custom label 0
+        "",                                                 // Custom label 1
+        "",                                                 // Custom label 2
+        "",                                                 // Custom label 3
+        "",                                                 // Custom label 4
+      ];
+
       result.push(row);
       isFirstRow = false;
     }
