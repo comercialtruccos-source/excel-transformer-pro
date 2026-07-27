@@ -18,6 +18,8 @@ import {
   RefreshCw,
   Search,
   CheckCircle2,
+  AlertCircle,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,13 +39,15 @@ import {
 } from "@/lib/marketingCopyGenerator";
 
 export default function MarketingPlanner() {
-  const [excelData, setExcelData] = useState<string[][] | null>(null);
   const [pdfPages, setPdfPages] = useState<PdfPageData[]>([]);
   const [pdfFileName, setPdfFileName] = useState<string>("");
+  const [collectionTitle, setCollectionTitle] = useState<string>("");
+
+  const [excelData, setExcelData] = useState<string[][] | null>(null);
   const [excelFileName, setExcelFileName] = useState<string>("");
 
-  const [isLoadingExcel, setIsLoadingExcel] = useState(false);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const [isLoadingExcel, setIsLoadingExcel] = useState(false);
 
   const [mergedProducts, setMergedProducts] = useState<MergedProductData[]>([]);
   const [copiesMap, setCopiesMap] = useState<Map<string, ReferenceMultichannelCopy>>(new Map());
@@ -52,42 +56,7 @@ export default function MarketingPlanner() {
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Handle Excel Upload
-  const handleExcelUpload = async (file: File) => {
-    setIsLoadingExcel(true);
-    try {
-      const rawData = await readExcelFile(file);
-      const transformed = transformExcelData(rawData);
-      setExcelData(transformed);
-      setExcelFileName(file.name);
-
-      // Extract unique references from transformed data
-      const refs = Array.from(new Set(transformed.slice(1).map((r) => r[1]).filter(Boolean)));
-
-      // Re-match with current PDF data if any
-      const pdfMap = pdfPages.length ? matchPdfDesignData(pdfPages, refs) : new Map<string, PdfDesignData>();
-      const products = buildMergedProducts(transformed, pdfMap);
-      setMergedProducts(products);
-
-      // Generate copies
-      const copies = new Map<string, ReferenceMultichannelCopy>();
-      products.forEach((p) => copies.set(p.referencia, generateMultichannelCopy(p)));
-      setCopiesMap(copies);
-
-      if (products.length > 0) {
-        setSelectedRef(products[0].referencia);
-      }
-
-      toast.success(`Base de datos cargada: ${products.length} referencias procesadas.`);
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al procesar la base de datos Excel.");
-    } finally {
-      setIsLoadingExcel(false);
-    }
-  };
-
-  // Handle PDF Upload
+  // STEP 1: Handle PDF Upload First
   const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -98,6 +67,12 @@ export default function MarketingPlanner() {
       setPdfPages(pages);
       setPdfFileName(file.name);
 
+      // Extract collection title / mood concept from PDF pages
+      const pdfMapTest = matchPdfDesignData(pages, ["TEST_REF"]);
+      const extractedConcept = pdfMapTest.values().next().value?.collectionTitle || "Colección Esenciales & Tendencia Denim";
+      setCollectionTitle(extractedConcept);
+
+      // If Excel was already uploaded, re-fuse with new PDF knowledge base
       if (excelData) {
         const refs = Array.from(new Set(excelData.slice(1).map((r) => r[1]).filter(Boolean)));
         const pdfMap = matchPdfDesignData(pages, refs);
@@ -108,19 +83,65 @@ export default function MarketingPlanner() {
         products.forEach((p) => copies.set(p.referencia, generateMultichannelCopy(p)));
         setCopiesMap(copies);
 
-        toast.success(`PDF procesado: ${pages.length} páginas analizadas y combinadas.`);
+        if (products.length > 0 && !selectedRef) {
+          setSelectedRef(products[0].referencia);
+        }
+
+        toast.success(`Presentación PDF analizada (${pages.length} páginas). Fusión completada con ${products.length} referencias.`);
       } else {
-        toast.success(`PDF de diseño cargado (${pages.length} páginas). Sube el Excel para vincular.`);
+        toast.success(`PASO 1 COMPLETADO: Presentación PDF "${file.name}" analizada (${pages.length} páginas). Ahora sube el Excel (Paso 2).`);
       }
     } catch (error) {
       console.error(error);
-      toast.error("Error al leer el archivo PDF de la presentación de diseño.");
+      toast.error("Error al leer la presentación PDF de la colección.");
     } finally {
       setIsLoadingPdf(false);
     }
   };
 
-  // Copy to clipboard helper
+  // STEP 2: Handle Excel Upload Second
+  const handleExcelUpload = async (file: File) => {
+    if (!pdfPages.length) {
+      toast.error("¡Atención! Primero debes subir la presentación PDF de la colección (Paso 1) para analizar el concepto estético.", {
+        duration: 5000,
+      });
+      return;
+    }
+
+    setIsLoadingExcel(true);
+    try {
+      const rawData = await readExcelFile(file);
+      const transformed = transformExcelData(rawData);
+      setExcelData(transformed);
+      setExcelFileName(file.name);
+
+      // Extract unique references from transformed Excel rows
+      const refs = Array.from(new Set(transformed.slice(1).map((r) => r[1]).filter(Boolean)));
+
+      // Step 3: Match Excel references with prior PDF knowledge base
+      const pdfMap = matchPdfDesignData(pdfPages, refs);
+      const products = buildMergedProducts(transformed, pdfMap);
+      setMergedProducts(products);
+
+      // Generate multichannel copies derived from PDF-enriched AIDA descriptions
+      const copies = new Map<string, ReferenceMultichannelCopy>();
+      products.forEach((p) => copies.set(p.referencia, generateMultichannelCopy(p)));
+      setCopiesMap(copies);
+
+      if (products.length > 0) {
+        setSelectedRef(products[0].referencia);
+      }
+
+      toast.success(`PASO 2 COMPLETADO: Base de datos procesada. Se generaron copys multicanal únicos para ${products.length} referencias.`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al procesar la base de datos Excel.");
+    } finally {
+      setIsLoadingExcel(false);
+    }
+  };
+
+  // Helper for clipboard copying
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
@@ -148,8 +169,8 @@ export default function MarketingPlanner() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 p-4 md:p-8">
-      {/* Top Header & Navigation */}
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Top Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
           <div>
             <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
@@ -160,10 +181,10 @@ export default function MarketingPlanner() {
               <span className="font-semibold text-slate-800 dark:text-slate-200">Generador de Marketing</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              Generador Multicanal de Comunicación
+              Generador Multicanal de Comunicación Paso a Paso
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Fusión inteligente de Base de Datos Excel + Presentaciones PDF de Diseño con generación AIDA para TikTok, Instagram, Facebook, Email y Ads.
+              Proceso guiado: 1º Lectura del PDF de la Colección ➔ 2º Ingesta de Base de Datos Excel ➔ 3º Estrategia Multicanal.
             </p>
           </div>
 
@@ -181,47 +202,38 @@ export default function MarketingPlanner() {
           </div>
         </header>
 
-        {/* Dual Upload Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Excel Upload */}
-          <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-emerald-600" /> 1. Base de Datos Excel (Obligatorio)
-              </CardTitle>
-              <CardDescription>
-                Sube el archivo Excel con referencias, tallas, colores y nombres.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FileUpload
-                onFileSelect={handleExcelUpload}
-                isLoading={isLoadingExcel}
-                acceptedFormats=".xlsx, .xls, .csv"
-              />
-              {excelFileName && (
-                <div className="mt-3 text-xs flex items-center justify-between text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-200 dark:bg-emerald-950 dark:border-emerald-900 dark:text-emerald-300">
-                  <span className="flex items-center gap-1 font-medium">
-                    <CheckCircle2 className="w-4 h-4" /> {excelFileName}
-                  </span>
-                  <Badge variant="outline">{mergedProducts.length} referencias</Badge>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Step-by-Step Flow Instructions Banner */}
+        {!pdfPages.length && (
+          <div className="p-4 bg-indigo-50 border border-indigo-200 dark:bg-indigo-950/60 dark:border-indigo-900 rounded-lg flex items-start gap-3 text-indigo-900 dark:text-indigo-200 text-xs">
+            <AlertCircle className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div>
+              <strong className="font-semibold block text-sm mb-0.5">Flujo Requerido: Lectura Previa del PDF</strong>
+              Para garantizar que los textos de TikTok, Instagram, Facebook, Email y Ads tengan verdadera armonía con el concepto estético, <strong>debes subir primero el PDF de la presentación de la colección (Paso 1)</strong>. Una vez aprendido el PDF, subes la base de datos Excel (Paso 2).
+            </div>
+          </div>
+        )}
 
-          {/* Card 2: PDF Design Presentation Upload */}
-          <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+        {/* Sequential Upload Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* STEP 1 CARD: PDF Presentation (REQUIRED FIRST) */}
+          <Card className={`border-2 transition shadow-sm ${pdfPages.length ? "border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20" : "border-indigo-400 dark:border-indigo-800"}`}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <FileText className="w-5 h-5 text-indigo-600" /> 2. Presentación de Diseño PDF (Opcional)
-              </CardTitle>
-              <CardDescription>
-                Sube el PDF con conceptos de colección, estilo, roturas y notas de diseño.
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
+                  <FileText className="w-5 h-5 text-indigo-600" /> PASO 1: Presentación PDF (Obligatorio Primero)
+                </CardTitle>
+                {pdfPages.length > 0 ? (
+                  <Badge className="bg-indigo-600 text-white">Completado</Badge>
+                ) : (
+                  <Badge variant="outline" className="border-indigo-400 text-indigo-600">Requerido 1º</Badge>
+                )}
+              </div>
+              <CardDescription className="text-xs">
+                Sube el PDF con conceptos de colección, moodboard, roturas y notas de diseño.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-6 text-center hover:bg-slate-50 dark:hover:bg-slate-900 transition cursor-pointer relative">
+              <div className="border-2 border-dashed border-indigo-300 dark:border-indigo-800 rounded-lg p-6 text-center hover:bg-indigo-50/50 dark:hover:bg-indigo-950/40 transition cursor-pointer relative">
                 <input
                   type="file"
                   accept=".pdf"
@@ -232,25 +244,68 @@ export default function MarketingPlanner() {
                 {isLoadingPdf ? (
                   <div className="flex flex-col items-center gap-2 text-indigo-600">
                     <RefreshCw className="w-8 h-8 animate-spin" />
-                    <span className="text-xs font-medium">Procesando y extrayendo páginas PDF…</span>
+                    <span className="text-xs font-medium">Leyendo y analizando PDF de la colección…</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-2 text-slate-500">
+                  <div className="flex flex-col items-center gap-2 text-slate-600 dark:text-slate-300">
                     <Upload className="w-8 h-8 text-indigo-500" />
-                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                      Haz clic o arrastra aquí tu presentación PDF de diseño
+                    <span className="text-xs font-medium">
+                      {pdfPages.length ? "Subir o reemplazar Presentación PDF de Diseño" : "Haz clic o arrastra aquí la presentación PDF de la colección"}
                     </span>
-                    <span className="text-[11px] text-slate-400">PDF (.pdf)</span>
+                    <span className="text-[11px] text-slate-400">Archivo PDF (.pdf)</span>
                   </div>
                 )}
               </div>
 
               {pdfFileName && (
-                <div className="text-xs flex items-center justify-between text-indigo-700 bg-indigo-50 p-2 rounded border border-indigo-200 dark:bg-indigo-950 dark:border-indigo-900 dark:text-indigo-300">
-                  <span className="flex items-center gap-1 font-medium">
-                    <CheckCircle2 className="w-4 h-4" /> {pdfFileName}
+                <div className="text-xs space-y-2 text-indigo-900 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-950 p-3 rounded border border-indigo-200 dark:border-indigo-900">
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-indigo-600" /> {pdfFileName}
+                    </span>
+                    <Badge variant="secondary" className="text-[10px]">{pdfPages.length} páginas leídas</Badge>
+                  </div>
+                  {collectionTitle && (
+                    <div className="text-[11px] text-indigo-700 dark:text-indigo-300 bg-indigo-100/60 dark:bg-indigo-900/60 p-2 rounded">
+                      <strong>Concepto Extraído:</strong> "{collectionTitle}"
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* STEP 2 CARD: Excel Database (UNLOCKS AFTER STEP 1) */}
+          <Card className={`border-2 transition shadow-sm ${!pdfPages.length ? "opacity-60 border-slate-300 dark:border-slate-800" : excelFileName ? "border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20" : "border-emerald-400 dark:border-emerald-800"}`}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                  <FileSpreadsheet className="w-5 h-5 text-emerald-600" /> PASO 2: Base de Datos Excel
+                </CardTitle>
+                {excelFileName ? (
+                  <Badge className="bg-emerald-600 text-white">Completado</Badge>
+                ) : pdfPages.length ? (
+                  <Badge variant="outline" className="border-emerald-400 text-emerald-600">Listo para subir 2º</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px]">Bloqueado (Sube PDF primero)</Badge>
+                )}
+              </div>
+              <CardDescription className="text-xs">
+                Sube el archivo Excel con las referencias, tallas, colores y nombres.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FileUpload
+                onFileSelect={handleExcelUpload}
+                isLoading={isLoadingExcel}
+                acceptedFormats=".xlsx, .xls, .csv"
+              />
+              {excelFileName && (
+                <div className="mt-3 text-xs flex items-center justify-between text-emerald-700 bg-emerald-50 p-2.5 rounded border border-emerald-200 dark:bg-emerald-950 dark:border-emerald-900 dark:text-emerald-300">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> {excelFileName}
                   </span>
-                  <Badge variant="outline">{pdfPages.length} páginas</Badge>
+                  <Badge variant="outline">{mergedProducts.length} referencias fusionadas</Badge>
                 </div>
               )}
             </CardContent>
@@ -395,7 +450,7 @@ export default function MarketingPlanner() {
                                 <Sparkles className="w-4 h-4" /> Descripción AIDA Central para Shopify (Origen Unificado)
                               </CardTitle>
                               <CardDescription className="text-xs">
-                                Esta es la descripción única del producto. Todos los demás canales de comunicación se derivan directamente de este texto.
+                                Esta es la descripción única del producto derivada del conocimiento del PDF. Todos los demás canales de comunicación se derivan de este texto.
                               </CardDescription>
                             </div>
                             <Button
@@ -436,7 +491,7 @@ export default function MarketingPlanner() {
                       <Card>
                         <CardHeader className="pb-3">
                           <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-pink-500" /> Ganchos Cortos de 3 Segundos
+                            <Sparkles className="w-4 h-4 text-pink-500" /> Ganchos Cortos de 3 Segundos (Basados en AIDA)
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
@@ -535,19 +590,6 @@ export default function MarketingPlanner() {
                           ))}
                         </CardContent>
                       </Card>
-
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold">Ideas para Stories Interactivas</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-xs">
-                          {activeCopy.instagram.storyIdeas.map((story, idx) => (
-                            <div key={idx} className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 rounded font-medium">
-                              💡 {story}
-                            </div>
-                          ))}
-                        </CardContent>
-                      </Card>
                     </TabsContent>
 
                     {/* Tab 3: Facebook */}
@@ -570,9 +612,6 @@ export default function MarketingPlanner() {
                           <pre className="whitespace-pre-wrap font-sans text-xs bg-slate-50 dark:bg-slate-900 p-3 rounded border border-slate-200 dark:border-slate-800 leading-relaxed">
                             {activeCopy.facebook.conversationalCopy}
                           </pre>
-                          <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-200 rounded text-xs">
-                            <strong>Llamado a la Acción Sugerido:</strong> {activeCopy.facebook.callToAction}
-                          </div>
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -615,9 +654,6 @@ export default function MarketingPlanner() {
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                          <div className="text-xs p-2 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200 rounded">
-                            <strong>Preview Text:</strong> {activeCopy.email.previewText}
-                          </div>
                           <pre className="whitespace-pre-wrap font-sans text-xs bg-slate-50 dark:bg-slate-900 p-3 rounded border border-slate-200 dark:border-slate-800 leading-relaxed">
                             {activeCopy.email.emailBodyText}
                           </pre>
@@ -663,7 +699,7 @@ export default function MarketingPlanner() {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-xs bg-slate-50 dark:bg-slate-900 p-3 rounded border border-slate-200 dark:border-slate-800 leading-relaxed">
+                          <p className="text-xs bg-slate-50 dark:bg-slate-900 p-3 rounded border border-slate-200 dark:border-slate-800 leading-relaxed font-medium">
                             {activeCopy.ads.primaryText}
                           </p>
                         </CardContent>
