@@ -120,18 +120,27 @@ const ShopifyProductGenerator = () => {
         <div className="min-h-screen bg-background">
             {/* Header */}
             <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-                <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-                    <Link to="/" className="mr-2">
-                        <Button variant="ghost" size="icon" className="rounded-full">
-                            <ArrowLeft className="w-4 h-4" />
-                        </Button>
-                    </Link>
-                    <div className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center">
-                        <ShoppingBag className="w-5 h-5 text-white" />
+                <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Link to="/" className="mr-2">
+                            <Button variant="ghost" size="icon" className="rounded-full">
+                                <ArrowLeft className="w-4 h-4" />
+                            </Button>
+                        </Link>
+                        <div className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center">
+                            <ShoppingBag className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-lg text-foreground">Generador CSV Shopify</h1>
+                            <p className="text-xs text-muted-foreground">Crea archivos de importación de productos</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="font-bold text-lg text-foreground">Generador CSV Shopify</h1>
-                        <p className="text-xs text-muted-foreground">Crea archivos de importación de productos</p>
+                    <div className="flex items-center gap-2">
+                        <Link to="/marketing">
+                            <Button variant="outline" size="sm" className="gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-none hover:opacity-90">
+                                <Sparkles className="w-4 h-4" /> Generador Marketing
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </header>

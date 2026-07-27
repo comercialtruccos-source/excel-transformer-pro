@@ -118,13 +118,27 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <FileSpreadsheet className="w-5 h-5 text-primary-foreground" />
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+              <FileSpreadsheet className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-bold text-lg text-foreground">Trucco's Jeans - Rappaz</h1>
+              <p className="text-xs text-muted-foreground">Convierte formato horizontal a vertical + CSV Shopify</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-lg text-foreground">Trucco's Jeans - Rappaz</h1>
-            <p className="text-xs text-muted-foreground">Convierte formato horizontal a vertical + CSV Shopify</p>
+          <div className="flex items-center gap-2">
+            <Link to="/shopify">
+              <Button variant="outline" size="sm" className="gap-2">
+                <ShoppingBag className="w-4 h-4 text-emerald-600" /> Crear Shopify
+              </Button>
+            </Link>
+            <Link to="/marketing">
+              <Button variant="outline" size="sm" className="gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-none hover:opacity-90">
+                <Sparkles className="w-4 h-4" /> Generador Marketing
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
