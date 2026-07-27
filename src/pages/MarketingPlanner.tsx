@@ -317,10 +317,13 @@ export default function MarketingPlanner() {
                   <Card className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white border-none shadow-md">
                     <CardContent className="p-5 space-y-2">
                       <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h2 className="text-2xl font-bold tracking-tight text-white">{activeCopy.referencia}</h2>
                           <Badge className="bg-indigo-500/30 text-indigo-200 border-indigo-400/40">
                             {activeCopy.productData.nombre}
+                          </Badge>
+                          <Badge variant="outline" className="text-[11px] border-amber-400/60 text-amber-300 bg-amber-950/40">
+                            Arquetipo: {activeCopy.productData.aida.archetype}
                           </Badge>
                         </div>
                         <Button

@@ -1,7 +1,6 @@
 import { fixSpanishOrthography } from "./spanishOrthography";
 import { PdfDesignData } from "./pdfParser";
 
-// Deterministic string hashing for unique per-product variation
 function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -24,6 +23,7 @@ export function getModelSize(referencia: string): string {
 }
 
 export interface AIDAStructure {
+  archetype: "PAS" | "FAB" | "STORYTELLING" | "HYPE" | "VERSATILITY" | "SCULPTING";
   atencion: string;
   interes: string;
   deseo: string;
@@ -32,62 +32,88 @@ export interface AIDAStructure {
   fullText: string;
 }
 
-// ===== VARIACIONES DE ATENCIÓN =====
-const atencionBlusa = [
-  (n: string, mood: string) => `Eleva tu look con la ${n} que toda mujer necesita esta temporada. Inspirada en la tendencia ${mood}.`,
-  (n: string, mood: string) => `Dale un giro a tu estilo con esta ${n} que irradia frescura y feminidad dentro de la colección ${mood}.`,
-  (n: string, mood: string) => `Tu próxima prenda favorita ya está aquí. Conoce la ${n} diseñada para destacar en cualquier ocasión.`,
-  (n: string, mood: string) => `Estilo, actitud y sofisticación se encuentran en esta ${n} de la colección ${mood}.`,
-  (n: string, mood: string) => `Reinventa tu guardarropa con la ${n} perfecta para crear looks inolvidables.`,
-  (n: string, mood: string) => `Frescura y distinción en una sola pieza: la ${n} que complementa tu estilo único.`,
+// ===== ARCHETYPE 1: PAS (Problem - Agitate - Solution) =====
+const pasAtencion = [
+  (n: string, ref: string) => `¿Cansada de prendas que pierden la forma o aprietan a mitad del día? Conoce la ${n} (REF ${ref}).`,
+  (n: string, ref: string) => `¿Buscas esa prenda que arme increíble sin sacrificar tu libertad de movimiento? La ${n} (REF ${ref}) es la respuesta.`,
+  (n: string, ref: string) => `El dilema de encontrar ropa elegante y realmente cómoda termina con la ${n} (REF ${ref}).`,
+  (n: string, ref: string) => `¿Te cuesta armar outfits rápidos sin caer en lo básico? La ${n} (REF ${ref}) resuelve tu look en segundos.`,
 ];
 
-const atencionJean = [
-  (n: string, mood: string) => `¿Buscas el fit perfecto que moldee tu silueta sin sacrificar comodidad? Conoce el ${n} de la colección ${mood}.`,
-  (n: string, mood: string) => `El jean que estabas esperando para realzar tu figura con elegancia: ${n} en tendencia ${mood}.`,
-  (n: string, mood: string) => `Reinventa tu estilo denim con el ${n} diseñado para adaptarse a tu ritmo diario.`,
-  (n: string, mood: string) => `Confort absoluto y horma envidiable en cada detalle del ${n} de la colección ${mood}.`,
-  (n: string, mood: string) => `Lleva tu estilo urbano al siguiente nivel con el ${n} imprescindible de esta temporada.`,
-  (n: string, mood: string) => `Definición, ajuste y actitud en una prenda icónica: el ${n} que transforma tu outfit.`,
+const pasInteres = [
+  (c: string, det: string) => `Desarrollada en ${c}, su tejido de ingeniería textil resuelve la rigidez habitual. Incorpora ${det}, garantizando suavidad y frescura constante.`,
+  (c: string, det: string) => `Confeccionada en ${c}, evita deformaciones y arrugas excesivas. Sus atributos (${det}) brindan el ajuste anatómico que tu cuerpo necesita.`,
+  (c: string, det: string) => `Gracias a su composición en ${c}, olvídate de telas ásperas. Su estructura con ${det} acompaña tus movimientos con absoluta ligereza.`,
 ];
 
-const atencionPlusSize = [
-  (n: string, mood: string) => `Descubre la ${n} que celebra cada curva con estilo, sofisticación y la tendencia ${mood}.`,
-  (n: string, mood: string) => `Tu cuerpo, tu confianza: la ${n} diseñada para brindarte un calce envolvente y espectacular.`,
-  (n: string, mood: string) => `Estilo sin límites. Abraza tu silueta con la ${n} de la colección ${mood}.`,
-  (n: string, mood: string) => `Moda real para mujeres reales: la ${n} que combina horma anatómica y confort total.`,
-  (n: string, mood: string) => `Llega la ${n} Plus Size pensada para hacerte sentir poderosa, cómoda y radiante.`,
+const pasDeseo = [
+  (st: string, occ: string) => `Siente la tranquilidad de lucir impecable en ${occ}. Olvídate de ajustar tu ropa a cada instante. Tip de styling: ${st}.`,
+  (st: string, occ: string) => `Proyecta una imagen profesional y estilizada en ${occ}. Disfruta la confianza de vestir una prenda impecable. Combínala con: ${st}.`,
 ];
 
-// ===== VARIACIONES DE INTERÉS =====
-const interesList = [
-  (c: string, det: string) => `Elaborada en ${c}, su textura de alta calidad garantiza suavidad al contacto con la piel y una caída favorecedora. Sus detalles de confección (${det}) aportan un acabado refinado y duradero.`,
-  (c: string, det: string) => `Confeccionada con un equilibrado tejido en ${c}, esta prenda ofrece flexibilidad y óptima recuperación elástica. Destaca por sus atributos únicos: ${det}.`,
-  (c: string, det: string) => `Su composición en ${c} le otorga un movimiento natural y una sensación liviana durante todo el día. Cuenta con finos detalles de acabado (${det}) que la hacen irrepetible.`,
-  (c: string, det: string) => `Diseñada en ${c}, combina resistencia y frescura para acompañarte en tus mejores momentos. Incorpora acentos de diseño como ${det} para un look sofisticado.`,
-  (c: string, det: string) => `El tejido premium en ${c} se adapta con naturalidad a tu cuerpo, conservando su forma lavado tras lavado. Los detalles de ${det} elevan su presencia visual.`,
+// ===== ARCHETYPE 2: FAB (Feature - Advantage - Benefit) =====
+const fabAtencion = [
+  (n: string, ref: string) => `Ingeniería de diseño y alta confección: descubre los secretos de la ${n} (REF ${ref}).`,
+  (n: string, ref: string) => `Detalles premium que marcan la diferencia. Presentamos la nueva ${n} (REF ${ref}).`,
+  (n: string, ref: string) => `Calidad textil y confección de vanguardia en la ${n} (REF ${ref}).`,
+  (n: string, ref: string) => `Innovación en cada costura: así es la ${n} (REF ${ref}) de la nueva colección.`,
 ];
 
-// ===== VARIACIONES DE DESEO =====
-const deseoList = [
-  (st: string, occ: string) => `Ideal para entornos de ${occ}. Siente la seguridad de vestir una pieza versátil que resalta lo mejor de ti. Tip de styling sugerido: ${st}.`,
-  (st: string, occ: string) => `Una prenda comodín pensada para elevar tus looks de ${occ}. Diseñada para hacerte lucir arreglada sin esfuerzo. Consejo de combinación: ${st}.`,
-  (st: string, occ: string) => `Transmite confianza y estilo auténtico donde vayas. Perfecta para un día de ${occ}. Recomendación de diseño: ${st}.`,
-  (st: string, occ: string) => `Es la pieza clave que resuelve cualquier dilema de vestuario para ${occ}. proyectando elegancia y frescura. Llévala con: ${st}.`,
-  (st: string, occ: string) => `Diseñada para mujeres exigentes que valoran el equilibrio entre confort y tendencia en momentos de ${occ}. ${st}.`,
+const fabInteres = [
+  (c: string, det: string) => `Característica principal: Tejido de alta densidad en ${c}. Ventaja: excelente flexibilidad y transpirabilidad. Beneficio: confort prolongado y resistencia lavado tras lavado (${det}).`,
+  (c: string, det: string) => `Tejida en ${c} con acabado de alta definición. Permite una recuperación elástica inmediata y resalta atributos clave: ${det}.`,
 ];
 
-// ===== VARIACIONES DE ACCIÓN =====
-const accionList = [
-  () => `Haz de esta pieza el nuevo imprescindible de tu guardarropa y marca la diferencia hoy.`,
-  () => `Agrégala a tu pedido ahora y descubre por qué se convertirá en tu opción favorita.`,
-  () => `No esperes más para renovar tu colección con esta prenda estrella de edición limitada.`,
-  () => `Haz clic para asegurar la tuya y llevar tu estilo al siguiente nivel.`,
-  () => `Dale el upgrade que tu closet merece con esta pieza pensada para destacar.`,
+const fabDeseo = [
+  (st: string, occ: string) => `Disfruta de una prenda versátil para ${occ} que mantiene su color y estructura intactos. Sugerencia de styling: ${st}.`,
+  (st: string, occ: string) => `Una inversión inteligente para tu armario. Perfecta para un look de ${occ}. Llévala con: ${st}.`,
+];
+
+// ===== ARCHETYPE 3: STORYTELLING & TENDENCIA =====
+const storyAtencion = [
+  (n: string, ref: string) => `Directo desde el taller de diseño: la inspiración detrás de la ${n} (REF ${ref}).`,
+  (n: string, ref: string) => `Cuando la tendencia y el arte de la confección se unen, nace la ${n} (REF ${ref}).`,
+  (n: string, ref: string) => `Una declaración de estilo contemporáneo: así conceptualizamos la ${n} (REF ${ref}).`,
+];
+
+const storyInteres = [
+  (c: string, det: string) => `Inspirada en el equilibrio entre sofisticación y espontaneidad, confeccionada en ${c}. Destaca por sus acabados en ${det}.`,
+  (c: string, det: string) => `Creada para contar una historia de moda sin esfuerzo. Su composición en ${c} se enriquece con detalles de ${det}.`,
+];
+
+const storyDeseo = [
+  (st: string, occ: string) => `Ideal para expresar tu personalidad en ${occ}. Recomendación del departamento de diseño: ${st}.`,
+  (st: string, occ: string) => `Eleva tu presencia en ${occ} con una pieza con alma. Propuesta de styling: ${st}.`,
+];
+
+// ===== ARCHETYPE 4: HYPE & BESTSELLER =====
+const hypeAtencion = [
+  (n: string, ref: string) => `🔥 ¡ALERTA TENDENCIA! La ${n} (REF ${ref}) se perfila como la favorita de la temporada.`,
+  (n: string, ref: string) => `✨ La prenda más solicitada en catálogo: ${n} (REF ${ref}).`,
+  (n: string, ref: string) => `⚡ ¡Nuevo Best-Seller! Descubre por qué todas aman la ${n} (REF ${ref}).`,
+];
+
+const hypeInteres = [
+  (c: string, det: string) => `Elaborada en ${c}, su éxito radica en la combinación de confort supremo y detalles visuales impactantes: ${det}.`,
+  (c: string, det: string) => `Confeccionada en ${c}, esta pieza ha conquistado a nuestras clientes por su calce favorecedor y acabados en ${det}.`,
+];
+
+const hypeDeseo = [
+  (st: string, occ: string) => `Asegura tu estilo para ${occ} antes de que se agoten las existencias. Styling recomendado: ${st}.`,
+  (st: string, occ: string) => `Pídela hoy y sé la primera en lucirla en ${occ}. Combínala así: ${st}.`,
+];
+
+// ===== ACCIONES DINÁMICAS =====
+const accionesVariadas = [
+  () => `Solicita tu pedido hoy mismo antes de que se agote en inventario.`,
+  () => `Haz clic para incorporar esta pieza clave a tu armario esta temporada.`,
+  () => `Agrégala a tu carrito y comprueba por ti misma la diferencia de confección.`,
+  () => `Escríbenos para catálogo mayorista o realiza tu compra en nuestra tienda online.`,
+  () => `No dejes pasar la oportunidad de estrenar tu nuevo look favorito.`,
 ];
 
 /**
- * Generates structured AIDA representation and HTML for Shopify, dynamically incorporating PDF design notes.
+ * Generates structured AIDA with distinct copy archetypes per reference
  */
 export function generateAIDAStructure(
   nombre: string,
@@ -96,13 +122,13 @@ export function generateAIDAStructure(
   pdfDesign?: PdfDesignData
 ): AIDAStructure {
   const ref = referencia.trim().toUpperCase();
-  const nombreLower = fixSpanishOrthography(
+  const nombreClean = fixSpanishOrthography(
     nombre
       .toLowerCase()
       .replace(/\b\w/g, (c) => c.toUpperCase())
   );
 
-  const composicionFormatted = fixSpanishOrthography(
+  const compClean = fixSpanishOrthography(
     composicion
       .replace(/%/g, "% ")
       .replace(/\s+/g, " ")
@@ -112,36 +138,53 @@ export function generateAIDAStructure(
   const tallaMod = getModelSize(referencia);
   const h = hashString(referencia + nombre);
 
-  const mood = pdfDesign?.collectionTitle || "Tendencia Esenciales & Denim";
-  const occ = pdfDesign?.occasion || "Casual Chic & Uso Diario";
+  const mood = pdfDesign?.collectionTitle || "Tendencia Denim & Esenciales";
+  const occ = pdfDesign?.occasion || "Casual Chic & Diario";
   const det = pdfDesign?.details?.length ? pdfDesign.details.join(", ") : "Horma anatómica y diseño exclusivo";
   const st = pdfDesign?.styling || "Combínalo con blazer o chaqueta denim para elevar tu estilo.";
 
+  // Select Archetype dynamically based on hash
+  const archetypes: AIDAStructure["archetype"][] = ["PAS", "FAB", "STORYTELLING", "HYPE", "VERSATILITY", "SCULPTING"];
+  const archetype = archetypes[h % archetypes.length];
+
   let atencion: string;
-  if (ref.startsWith("P")) {
-    atencion = pick(atencionPlusSize, h, 0)(nombreLower, mood);
-  } else if (ref.startsWith("J") || /jean|pantalón|pantalon/i.test(nombre)) {
-    atencion = pick(atencionJean, h, 0)(nombreLower, mood);
+  let interes: string;
+  let deseo: string;
+
+  if (archetype === "PAS") {
+    atencion = pick(pasAtencion, h, 0)(nombreClean, referencia);
+    interes = pick(pasInteres, h, 1)(compClean, det);
+    deseo = pick(pasDeseo, h, 2)(st, occ);
+  } else if (archetype === "FAB") {
+    atencion = pick(fabAtencion, h, 0)(nombreClean, referencia);
+    interes = pick(fabInteres, h, 1)(compClean, det);
+    deseo = pick(fabDeseo, h, 2)(st, occ);
+  } else if (archetype === "STORYTELLING") {
+    atencion = pick(storyAtencion, h, 0)(nombreClean, referencia);
+    interes = pick(storyInteres, h, 1)(compClean, det);
+    deseo = pick(storyDeseo, h, 2)(st, occ);
   } else {
-    atencion = pick(atencionBlusa, h, 0)(nombreLower, mood);
+    atencion = pick(hypeAtencion, h, 0)(nombreClean, referencia);
+    interes = pick(hypeInteres, h, 1)(compClean, det);
+    deseo = pick(hypeDeseo, h, 2)(st, occ);
   }
 
-  const interes = pick(interesList, h, 1)(composicionFormatted, det);
-  const deseo = pick(deseoList, h, 2)(st, occ);
-  const accion = pick(accionList, h, 3)();
+  const accion = pick(accionesVariadas, h, 4)();
 
-  const fullHTML = `<p>${atencion}</p>
+  const fullHTML = `<p><strong>${atencion}</strong></p>
 <p>${interes}</p>
 <p>${deseo}</p>
-<p>${accion}</p>
+<p><strong>${accion}</strong></p>
 <br>
 <p><strong>REF:</strong> ${referencia}</p>
-<p><strong>Elaborado en:</strong> ${composicionFormatted}</p>
-<p><strong>La Modelo usa una prenda talla:</strong> ${tallaMod}</p>`;
+<p><strong>Composición:</strong> ${compClean}</p>
+<p><strong>Colección:</strong> ${mood}</p>
+<p><strong>Talla de Modelo:</strong> Talla ${tallaMod}</p>`;
 
   const fullText = `${atencion}\n\n${interes}\n\n${deseo}\n\n${accion}`;
 
   return {
+    archetype,
     atencion: fixSpanishOrthography(atencion),
     interes: fixSpanishOrthography(interes),
     deseo: fixSpanishOrthography(deseo),
