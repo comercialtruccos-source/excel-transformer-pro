@@ -79,6 +79,18 @@ function cleanProductName(nombre: string, referencia: string): string {
 }
 
 /**
+ * Hash function to create deterministic index variations per reference
+ */
+function getRefHash(ref: string): number {
+  let hash = 0;
+  for (let i = 0; i < ref.length; i++) {
+    hash = (hash << 5) - hash + ref.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+/**
  * Builds merged product records by aggregating transformed HGI rows and combining with PDF design metadata.
  */
 export function buildMergedProducts(
@@ -129,149 +141,193 @@ export function buildMergedProducts(
 }
 
 /**
- * Generates multichannel marketing copy for a single product reference.
+ * Generates multichannel marketing copy dynamically harmonized with PDF design presentation data.
  */
 export function generateMultichannelCopy(product: MergedProductData): ReferenceMultichannelCopy {
   const { referencia, nombre, composicion, colores, tallas, pdfDesign } = product;
+  const refHash = getRefHash(referencia);
 
   const coloresText = colores.length ? colores.join(", ") : "Variedad de tonos";
   const tallasText = tallas.length ? tallas.join(" - ") : "Tallas estándar";
+
+  // PDF extracted attributes or intelligent defaults
+  const collectionTitle = pdfDesign?.collectionTitle || "Colección Esenciales & Tendencia Denim";
   const occasion = pdfDesign?.occasion || "Casual Chic & Diario";
-  const detailsList = pdfDesign?.details?.join(", ") || "Horma anatómica y diseño exclusivo";
-  const styling = pdfDesign?.styling || "Combínalo con blazer o chaqueta denim para elevar tu look.";
+  const detailsList = pdfDesign?.details?.length ? pdfDesign.details.join(", ") : "Horma anatómica y ajuste perfecto";
+  const styling = pdfDesign?.styling || "Combínalo con blazer o chaqueta denim para elevar tu estilo, o con tenis para un look casual diario.";
+  const designNotes = pdfDesign?.designNotes || `Diseñado dentro de la colección ${collectionTitle}, priorizando la comodidad y la horma.`;
+  const washOrFabricNotes = pdfDesign?.washOrFabricNotes || "Tejido de tacto suave y alta recuperación elástica.";
+  const slideRefNote = pdfDesign?.pageNumber ? `(Presentado en Diapositiva ${pdfDesign.pageNumber} del PDF)` : "";
+
+  // Dynamic Hooks variations for TikTok
+  const hookOptions = [
+    [
+      `¿Buscas el pantalón que arme silueta perfecta sin apretar? Mira la REF ${referencia} de la colección ${collectionTitle}. 🔥`,
+      `El secreto de la colección ${collectionTitle}: ${nombre} (REF ${referencia}). ✨`,
+      `¿Por qué la REF ${referencia} es la más pedida? Tela ${composicion} y ${detailsList}. 💖`,
+    ],
+    [
+      `3 formas de combinar la ${nombre} (REF ${referencia}) según nuestro departamento de diseño. 👗`,
+      `Si amas la tendencia ${collectionTitle}, tienes que probar la REF ${referencia}. 🔥`,
+      `¿El fit perfecto sí existe? Pon a prueba la ${nombre} en ${composicion}. ✨`,
+    ],
+    [
+      `Te mostramos en detalle la REF ${referencia}: ${designNotes}. 🌟`,
+      `De la presentación de diseño a tu closet: Conoce la ${nombre} (REF ${referencia}). 🛍️`,
+      `¿Outfit para ${occasion}? La respuesta es la REF ${referencia} de Trucco's. 💖`,
+    ],
+  ];
+
+  const selectedHooks = hookOptions[refHash % hookOptions.length];
 
   // --- 1. TikTok & Reels ---
   const tikTok: TikTokStrategy = {
-    hooks: [
-      `¿Buscas el pantalón que arme silueta perfecta sin apretar? Mira la REF ${referencia}. 🔥`,
-      `3 formas de combinar la ${nombre} de la nueva colección Trucco's. ✨`,
-      `El secreto para lucir increíble en segundos: ${nombre} (REF ${referencia}). 💖`,
-    ],
+    hooks: selectedHooks,
     videoStructure: {
-      hookTime: `0-3s: Gancho visual probándose la ${nombre} en cámara con música en tendencia.`,
-      detailTime: `3-10s: Acercamiento al tejido en ${composicion}, mostrando la elasticidad y los detalles (${detailsList}).`,
-      ctaTime: `10-15s: Muestra las variaciones en ${coloresText} e invita a hacer clic en el perfil o escribir a WhatsApp.`,
+      hookTime: `0-3s: Gancho visual mostrando la ${nombre} en modelo o perchero con texto superpuesto: "${selectedHooks[0]}"`,
+      detailTime: `3-10s: Close-up al tejido (${composicion}). Muestra de cerca los detalles (${detailsList}) y resalta: "${washOrFabricNotes}".`,
+      ctaTime: `10-15s: Muestra la prenda combinada (${styling}) en tonos ${coloresText} e invita a hacer clic en la bio o WhatsApp.`,
     },
     hashtags: [
       "#TruccosJeans",
       "#DenimStyle",
       "#ModaColombia",
-      `#${referencia}`,
-      "#OcasiónChic",
+      `#REF${referencia}`,
+      `#${collectionTitle.replace(/[^a-zA-Z0-9]/g, "")}`,
       "#JeansColombianos",
     ],
   };
 
   // --- 2. Instagram ---
-  const mainCaption = `✨ ¡Conoce la nueva ${nombre} (REF ${referencia})! ✨\n\n` +
-    `Diseñada pensando en tu comodidad y elegancia diaria. Elaborada en **${composicion}**, esta prenda se adapta a tu silueta brindándote la horma y flexibilidad que necesitas para toda la jornada.\n\n` +
-    `🌸 **Ocasión ideal:** ${occasion}\n` +
-    `🔍 **Detalles de diseño:** ${detailsList}\n` +
-    `💡 **Styling sugerido:** ${styling}\n\n` +
+  const mainCaption = `✨ **NUEVO INGRESO | ${collectionTitle.toUpperCase()}** ✨\n\n` +
+    `Presentamos la **${nombre} (REF ${referencia})** ${slideRefNote}\n\n` +
+    `🎨 **Inspiración de Diseño:** ${designNotes}\n` +
+    `🌿 **Tejido & Confort:** Confeccionado en **${composicion}**. ${washOrFabricNotes}\n` +
+    `🔍 **Detalles de Horma:** ${detailsList}\n` +
+    `📌 **Ocasión de uso:** ${occasion}\n\n` +
+    `💡 **Tip de Styling (Departamento de Diseño):**\n"${styling}"\n\n` +
     `🎨 **Colores disponibles:** ${coloresText}\n` +
     `📏 **Tallas:** ${tallasText}\n\n` +
-    `👉 ¡Haz clic en el enlace de nuestra biografía para hacer tu pedido mayorista o de tienda online! 🛍️`;
+    `👉 ¡Haz tu pedido mayorista o compra en tienda online haciendo clic en el enlace del perfil! 🛍️✨`;
 
   const instagram: InstagramStrategy = {
     mainCaption: fixSpanishOrthography(mainCaption),
     carouselSlides: [
       {
         slideNumber: 1,
-        title: `Lámina 1: Foto de Impacto`,
-        content: `Fotografía de modelo vistiendo la ${nombre}.\nTexto superpuesto: "${nombre} | El fit perfecto para tu día a día ✨"`,
+        title: `Lámina 1: Portada & Concepto`,
+        content: `Foto editorial de la ${nombre} (REF ${referencia}).\nTexto superpuesto: "${collectionTitle} | ${nombre}"`,
       },
       {
         slideNumber: 2,
-        title: `Lámina 2: Textura y Calidad`,
-        content: `Macro shot del tejido en ${composicion}.\nTexto superpuesto: "Tejido de máxima flexibilidad y confort. Compuesto por ${composicion}."`,
+        title: `Lámina 2: Textura & Lavado`,
+        content: `Acercamiento al tejido en ${composicion}.\nTexto superpuesto: "${washOrFabricNotes}. Detalles: ${detailsList}."`,
       },
       {
         slideNumber: 3,
         title: `Lámina 3: Tip de Styling`,
-        content: `Propuesta de outfit completo.\nTexto superpuesto: "${styling}"`,
+        content: `Propuesta visual de combinación.\nTexto superpuesto: "Styling sugerido: ${styling}"`,
       },
       {
         slideNumber: 4,
-        title: `Lámina 4: Disponibilidad y CTA`,
-        content: `Gráfica con variantes de color.\nTexto superpuesto: "Disponible en colores: ${coloresText}. Tallas ${tallasText}.\n¡Escríbenos al enlace de la bio!"`,
+        title: `Lámina 4: Colores & Pedido`,
+        content: `Muestrario de tonos ${coloresText}.\nTexto superpuesto: "Disponible en tallas ${tallasText}. ¡Escríbenos para catálogo mayorista!"`,
       },
     ],
     storyIdeas: [
-      `Encuesta Interactiva: "¿Preferirías esta ${nombre} para el día ☀️ o para la noche 🌙?"`,
-      `Sticker de Preguntas: "¿Con qué color de ${nombre} combinarías tu outfit de hoy: ${coloresText}?"`,
+      `Encuesta de Tendencia: "¿Combinarías la ${nombre} para ${occasion} ☀️ o para un evento de noche 🌙?"`,
+      `Detalle de Diseño: "Desliza para ver de cerca el acabado en ${composicion} de la REF ${referencia}."`,
     ],
   };
 
   // --- 3. Facebook ---
+  const fbTemplates = [
+    `Conoce la nueva ${nombre} (REF ${referencia}), parte de la colección "${collectionTitle}". Confeccionada con tela de alta resistencia en ${composicion}, te brinda una silueta moldeada y movimiento natural. ${designNotes}\n\n` +
+    `✔ Atributos destacados: ${detailsList}\n` +
+    `✔ Ocasión de uso: ${occasion}\n` +
+    `✔ Colores disponibles: ${coloresText}\n` +
+    `✔ Tallas: ${tallasText}\n\n` +
+    `💡 Tip de estilo: ${styling}\n\n` +
+    `Escríbenos a WhatsApp para consultar disponibilidad y precios al por mayor:`,
+
+    `¿Buscas renovación en tu tienda o guardarropa? La REF ${referencia} (${nombre}) destaca por su tejido en ${composicion} y sus detalles en ${detailsList}. Inspirada en la tendencia ${collectionTitle}.\n\n` +
+    `Ideal para quienes buscan elegancia en entornos de ${occasion}. ${washOrFabricNotes}\n\n` +
+    `🎨 Tonos: ${coloresText} | 📏 Tallas: ${tallasText}\n\n` +
+    `Haz clic abajo para chatear directamente con nuestras asesoras mayoristas:`,
+  ];
+
   const facebook: FacebookStrategy = {
-    conversationalCopy: fixSpanishOrthography(
-      `Si buscas versatilidad, durabilidad y un ajuste que resalte lo mejor de ti, la nueva ${nombre} (REF ${referencia}) es para ti.\n\n` +
-      `Confeccionada con tela de alta tecnología (${composicion}), te ofrece libertad de movimiento sin perder su forma original. Perfecta para un estilo ${occasion}.\n\n` +
-      `✔ Horma anatómica de ajuste confortable.\n` +
-      `✔ Disponible en colores ${coloresText}.\n` +
-      `✔ Tallas desde ${tallasText}.\n\n` +
-      `Recibe asesoría personalizada o catalogo completo para mayoristas dando clic abajo:`
-    ),
-    callToAction: "Enviar mensaje a WhatsApp de atención",
+    conversationalCopy: fixSpanishOrthography(fbTemplates[refHash % fbTemplates.length]),
+    callToAction: "Chatear en WhatsApp / Asesoría Mayorista",
   };
 
   // --- 4. Email Marketing ---
-  const emailBodyText = `Hola,\n\n` +
-    `Queremos presentarte la nueva ${nombre} (REF ${referencia}), una pieza clave de nuestra más reciente colección.\n\n` +
-    `Confeccionada en ${composicion}, combina suavidad, resistencia y un calce diseñado para brindar comodidad total durante todo el día.\n\n` +
-    `Atributos destacados:\n` +
-    `- Silueta y detalles: ${detailsList}\n` +
-    `- Ocasión recomendada: ${occasion}\n` +
-    `- Colores: ${coloresText}\n` +
-    `- Tallas: ${tallasText}\n\n` +
-    `Haz tu pedido hoy mismo y renueva tu inventario con las mejores prendas del mercado colombiano.`;
+  const emailSubjects = [
+    `✨ ${collectionTitle}: Descubre la nueva ${nombre} (REF ${referencia})`,
+    `Diseño, confort y tendencia: REF ${referencia} - ${nombre}`,
+    `El fit ideal para tu negocio: ${nombre} en ${composicion}`,
+  ];
 
-  const emailBodyHTML = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">` +
-    `<h2 style="color: #111;">La nueva ${nombre} ya está disponible ✨</h2>` +
-    `<p>Hola,</p>` +
-    `<p>Queremos presentarte la nueva <strong>${nombre} (REF ${referencia})</strong>, una pieza clave diseñada para destacar.</p>` +
-    `<p>Confeccionada en <strong>${composicion}</strong>, combina suavidad, resistencia y un calce superior.</p>` +
-    `<div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">` +
-    `<h4 style="margin-top: 0;">Detalles de la Prenda:</h4>` +
-    `<ul>` +
-    `<li><strong>Silueta & Detalles:</strong> ${detailsList}</li>` +
+  const emailBodyText = `Hola,\n\n` +
+    `Te presentamos la nueva ${nombre} (REF ${referencia}), pieza protagónica de la colección "${collectionTitle}".\n\n` +
+    `Nota de Diseño:\n"${designNotes}"\n\n` +
+    `Confeccionada en ${composicion}, esta prenda combina elasticidad superior con acabados de alta costura. ${washOrFabricNotes}\n\n` +
+    `Ficha Técnica & Atributos:\n` +
+    `- Referencia: ${referencia}\n` +
+    `- Detalles de horma: ${detailsList}\n` +
+    `- Ocasión recomendada: ${occasion}\n` +
+    `- Propuesta de combinación: ${styling}\n` +
+    `- Colores en catálogo: ${coloresText}\n` +
+    `- Tallas disponibles: ${tallasText}\n\n` +
+    `Solicita hoy mismo tu pedido mayorista y eleva las ventas de tu tienda con la calidad Trucco's.`;
+
+  const emailBodyHTML = `<div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #222; line-height: 1.6;">` +
+    `<div style="background-color: #111; color: #fff; padding: 20px; text-align: center;">` +
+    `<h1 style="margin: 0; font-size: 20px; letter-spacing: 1px;">TRUCCO'S JEANS | ${collectionTitle.toUpperCase()}</h1>` +
+    `</div>` +
+    `<div style="padding: 25px; background-color: #fff;">` +
+    `<h2 style="color: #111; margin-top: 0;">NUEVO INGRESO: ${nombre} (REF ${referencia})</h2>` +
+    `<p style="font-style: italic; color: #555; background: #f8f8f8; padding: 12px; border-left: 3px solid #6366f1;">"${designNotes}"</p>` +
+    `<p>Elaborada en <strong>${composicion}</strong>. ${washOrFabricNotes}</p>` +
+    `<div style="background-color: #f4f4f6; padding: 18px; border-radius: 8px; margin: 20px 0;">` +
+    `<h4 style="margin-top: 0; color: #333;">Ficha de Estilo & Confección:</h4>` +
+    `<ul style="padding-left: 20px; margin-bottom: 0;">` +
+    `<li><strong>Detalles de Horma:</strong> ${detailsList}</li>` +
     `<li><strong>Ocasión:</strong> ${occasion}</li>` +
+    `<li><strong>Styling recomendado:</strong> ${styling}</li>` +
     `<li><strong>Colores:</strong> ${coloresText}</li>` +
     `<li><strong>Tallas:</strong> ${tallasText}</li>` +
     `</ul>` +
     `</div>` +
     `<p style="text-align: center; margin-top: 30px;">` +
-    `<a href="#" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Solicitar Pedido / Catálogo</a>` +
+    `<a href="#" style="background-color: #4f46e5; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Solicitar Catálogo Mayorista</a>` +
     `</p>` +
+    `</div>` +
     `</div>`;
 
   const email: EmailMarketingStrategy = {
-    subjectLines: [
-      `La nueva ${nombre} que estabas esperando ya está disponible ✨`,
-      `Diseño, comodidad y tendencia: Conoce la REF ${referencia}`,
-      `El fit perfecto sí existe: Descubre la REF ${referencia}`,
-    ],
-    previewText: `Elaborado en ${composicion}. Descubre cómo combinarlo esta temporada.`,
+    subjectLines: emailSubjects,
+    previewText: `Confeccionado en ${composicion}. Descubre los detalles de la colección ${collectionTitle}.`,
     emailBodyHTML,
     emailBodyText: fixSpanishOrthography(emailBodyText),
   };
 
   // --- 5. Ads Digitales ---
   const ads: AdsDigitalStrategy = {
-    headline: `Efecto Moldeador y Comodidad Total | REF ${referencia}`,
+    headline: `Efecto Moldeador | ${nombre} REF ${referencia}`,
     primaryText: fixSpanishOrthography(
-      `¿Cansada de prendas que se deforman o aprietan? La ${nombre} (REF ${referencia}) está elaborada en ${composicion} para darte una horma envidiable y flexibilidad absoluta. ¡Envío seguro a todo el país!`
+      `¿Buscas prendas que resalten tu silueta con total comodidad? La ${nombre} (REF ${referencia}) de la colección ${collectionTitle} está elaborada en ${composicion} con ${detailsList}. ¡Ideal para ${occasion}! Solicita tu pedido online.`
     ),
     angleA: {
-      title: "Ángulo A: Calidad & Horma Anatómica",
+      title: "Ángulo A: Calidad, Horma & Tejido",
       text: fixSpanishOrthography(
-        `Disfruta de la calidad de confección colombiana. La REF ${referencia} moldea tu figura respetando tu comodidad gracias a su tejido en ${composicion}. Disponible en tallas ${tallasText}.`
+        `Experimenta el ajuste perfecto de Trucco's. La REF ${referencia} combina tejido en ${composicion} con ${washOrFabricNotes}. Moldea sin apretar. Disponible en tallas ${tallasText}.`
       ),
     },
     angleB: {
-      title: "Ángulo B: Tendencia & Versatilidad",
+      title: "Ángulo B: Tendencia de Diseño & Styling",
       text: fixSpanishOrthography(
-        `Eleva tu estilo para cualquier ocasión (${occasion}). Combina la ${nombre} fácilmente y luce impecable en cada momento del día.`
+        `Inspirada en la colección ${collectionTitle}. ${designNotes} Tip de styling: ${styling}`
       ),
     },
   };
@@ -294,9 +350,13 @@ export function exportMarketingGridToExcel(copies: ReferenceMultichannelCopy[], 
   const headers = [
     "REFERENCIA",
     "NOMBRE PRENDA",
+    "COLECCIÓN / MOOD PDF",
     "COMPOSICIÓN",
     "COLORES",
     "TALLAS",
+    "NOTAS DE DISEÑO (PDF)",
+    "OCASIÓN DE USO",
+    "STYLING SUGERIDO",
     "TIKTOK GANCHO 1",
     "TIKTOK GANCHO 2",
     "TIKTOK ESTRUCTURA VIDEO",
@@ -321,9 +381,13 @@ export function exportMarketingGridToExcel(copies: ReferenceMultichannelCopy[], 
     return [
       item.referencia,
       p.nombre,
+      p.pdfDesign?.collectionTitle || "Colección Esenciales",
       p.composicion,
       p.colores.join(", "),
       p.tallas.join(" - "),
+      p.pdfDesign?.designNotes || "",
+      p.pdfDesign?.occasion || "",
+      p.pdfDesign?.styling || "",
       item.tikTok.hooks[0] || "",
       item.tikTok.hooks[1] || "",
       `${item.tikTok.videoStructure.hookTime} | ${item.tikTok.videoStructure.detailTime} | ${item.tikTok.videoStructure.ctaTime}`,

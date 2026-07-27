@@ -341,9 +341,19 @@ export default function MarketingPlanner() {
                       </div>
 
                       {activeCopy.productData.pdfDesign && (
-                        <div className="text-xs bg-indigo-900/40 p-2.5 rounded border border-indigo-700/50 text-indigo-200 mt-2 space-y-1">
-                          <div><strong>Ocasión de uso (PDF):</strong> {activeCopy.productData.pdfDesign.occasion}</div>
-                          <div><strong>Detalles clave:</strong> {activeCopy.productData.pdfDesign.details.join(" • ")}</div>
+                        <div className="text-xs bg-indigo-900/40 p-3 rounded border border-indigo-700/50 text-indigo-200 mt-2 space-y-1.5">
+                          <div className="flex items-center justify-between font-semibold text-indigo-100">
+                            <span>🎨 Concepto PDF: {activeCopy.productData.pdfDesign.collectionTitle}</span>
+                            {activeCopy.productData.pdfDesign.pageNumber && (
+                              <Badge variant="outline" className="text-[10px] border-indigo-400 text-indigo-200">
+                                Diapositiva {activeCopy.productData.pdfDesign.pageNumber}
+                              </Badge>
+                            )}
+                          </div>
+                          <div><strong>Inspiración de Diseño:</strong> "{activeCopy.productData.pdfDesign.designNotes}"</div>
+                          <div><strong>Ocasión de Uso:</strong> {activeCopy.productData.pdfDesign.occasion}</div>
+                          <div><strong>Atributos & Lavado:</strong> {activeCopy.productData.pdfDesign.details.join(" • ")} ({activeCopy.productData.pdfDesign.washOrFabricNotes})</div>
+                          <div><strong>Styling Recomendado:</strong> {activeCopy.productData.pdfDesign.styling}</div>
                         </div>
                       )}
                     </CardContent>

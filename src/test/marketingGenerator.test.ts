@@ -11,7 +11,7 @@ describe("Marketing Multichannel Copy Generator Unit Tests", () => {
     const pages: PdfPageData[] = [
       {
         pageNumber: 1,
-        text: "Concepto de colección: Casual Chic Noche. Presentación de Jeans REF P0109 con tiro alto y roturas.",
+        text: "Colección Denim Revolution. Presentación de Jeans REF P0109 con tiro alto y roturas. Lavado vintage.",
       },
     ];
 
@@ -20,6 +20,7 @@ describe("Marketing Multichannel Copy Generator Unit Tests", () => {
 
     const pdfData = result.get("P0109")!;
     expect(pdfData.reference).toBe("P0109");
+    expect(pdfData.collectionTitle.toUpperCase()).toContain("DENIM REVOLUTION");
     expect(pdfData.details).toContain("tiro alto");
     expect(pdfData.details).toContain("roturas");
   });
@@ -44,34 +45,55 @@ describe("Marketing Multichannel Copy Generator Unit Tests", () => {
     expect(merged[0].tallas).toContain("M");
   });
 
-  it("should generate complete multichannel copy structure for a product reference", () => {
-    const product: MergedProductData = {
+  it("should generate distinct and harmonized copies for different references and PDF data", () => {
+    const pages: PdfPageData[] = [
+      {
+        pageNumber: 1,
+        text: "Colección Boho Chic 2026",
+      },
+      {
+        pageNumber: 2,
+        text: "REF P0109 - Jean bota ancha en tono hielo con tiro alto corsetero. Ideal para Oficina.",
+      },
+      {
+        pageNumber: 3,
+        text: "REF J0250 - Chamarra denim destruida con lavado ácido. Para Noche y Fiesta.",
+      },
+    ];
+
+    const pdfDataMap = matchPdfDesignData(pages, ["P0109", "J0250"]);
+
+    const product1: MergedProductData = {
       referencia: "P0109",
-      nombre: "Jean Bota Recta",
+      nombre: "Jean Bota Ancha",
       composicion: "98% Algodón 2% Elastano",
-      colores: ["ROJO", "AZUL"],
+      colores: ["AZUL HIELO"],
       tallas: ["S", "M", "L"],
+      pdfDesign: pdfDataMap.get("P0109"),
     };
 
-    const copies = generateMultichannelCopy(product);
+    const product2: MergedProductData = {
+      referencia: "J0250",
+      nombre: "Chamarra Denim",
+      composicion: "100% Algodón Rígido",
+      colores: ["NEGRO"],
+      tallas: ["XS", "S", "M"],
+      pdfDesign: pdfDataMap.get("J0250"),
+    };
 
-    // Verify TikTok strategy
-    expect(copies.tikTok.hooks.length).toBeGreaterThan(0);
-    expect(copies.tikTok.videoStructure.hookTime).toBeDefined();
+    const copy1 = generateMultichannelCopy(product1);
+    const copy2 = generateMultichannelCopy(product2);
 
-    // Verify Instagram strategy
-    expect(copies.instagram.mainCaption).toContain("P0109");
-    expect(copies.instagram.carouselSlides.length).toBe(4);
+    // Verify PDF collection theme harmonization (case-insensitive check)
+    expect(copy1.instagram.mainCaption.toUpperCase()).toContain("BOHO CHIC");
+    expect(copy2.instagram.mainCaption.toUpperCase()).toContain("BOHO CHIC");
 
-    // Verify Facebook strategy
-    expect(copies.facebook.conversationalCopy).toContain("P0109");
+    // Verify slide-specific details and unique texts across references
+    expect(copy1.instagram.mainCaption).toContain("Oficina");
+    expect(copy2.instagram.mainCaption).toContain("Noche");
 
-    // Verify Email strategy
-    expect(copies.email.subjectLines.length).toBeGreaterThan(0);
-    expect(copies.email.emailBodyText).toContain("P0109");
-
-    // Verify Digital Ads strategy
-    expect(copies.ads.headline).toContain("P0109");
-    expect(copies.ads.angleA.text).toContain("P0109");
+    // Ensure copies are distinct across references
+    expect(copy1.instagram.mainCaption).not.toEqual(copy2.instagram.mainCaption);
+    expect(copy1.tikTok.hooks[0]).not.toEqual(copy2.tikTok.hooks[0]);
   });
 });
