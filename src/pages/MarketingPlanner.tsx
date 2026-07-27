@@ -360,10 +360,13 @@ export default function MarketingPlanner() {
                   </Card>
 
                   {/* Channel Tabs */}
-                  <Tabs defaultValue="tiktok" className="w-full">
-                    <TabsList className="grid grid-cols-5 w-full bg-slate-200 dark:bg-slate-900">
+                  <Tabs defaultValue="shopify-aida" className="w-full">
+                    <TabsList className="grid grid-cols-6 w-full bg-slate-200 dark:bg-slate-900">
+                      <TabsTrigger value="shopify-aida" className="text-xs flex items-center gap-1.5 font-semibold">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Shopify (AIDA)
+                      </TabsTrigger>
                       <TabsTrigger value="tiktok" className="text-xs flex items-center gap-1.5">
-                        <Video className="w-3.5 h-3.5 text-pink-500" /> TikTok & Reels
+                        <Video className="w-3.5 h-3.5 text-pink-500" /> TikTok
                       </TabsTrigger>
                       <TabsTrigger value="instagram" className="text-xs flex items-center gap-1.5">
                         <Instagram className="w-3.5 h-3.5 text-purple-500" /> Instagram
@@ -378,6 +381,52 @@ export default function MarketingPlanner() {
                         <Target className="w-3.5 h-3.5 text-rose-500" /> Ads Digitales
                       </TabsTrigger>
                     </TabsList>
+
+                    {/* Tab 0: Shopify AIDA Core Description */}
+                    <TabsContent value="shopify-aida" className="space-y-4 pt-3">
+                      <Card className="border-emerald-200 dark:border-emerald-900 shadow-sm">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                                <Sparkles className="w-4 h-4" /> Descripción AIDA Central para Shopify (Origen Unificado)
+                              </CardTitle>
+                              <CardDescription className="text-xs">
+                                Esta es la descripción única del producto. Todos los demás canales de comunicación se derivan directamente de este texto.
+                              </CardDescription>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => copyToClipboard(activeCopy.productData.aida.fullText, "aida-text")}
+                              className="h-7 text-xs gap-1 border-emerald-300 text-emerald-800 dark:text-emerald-300"
+                            >
+                              {copiedKey === "aida-text" ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />} Copiar AIDA
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2 text-xs">
+                            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 rounded">
+                              <span className="font-bold text-indigo-700 dark:text-indigo-300 block mb-1">1. Atención (Hook Inicial):</span>
+                              <p className="text-slate-800 dark:text-slate-200">{activeCopy.productData.aida.atencion}</p>
+                            </div>
+                            <div className="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 rounded">
+                              <span className="font-bold text-purple-700 dark:text-purple-300 block mb-1">2. Interés (Tela, Confección & PDF):</span>
+                              <p className="text-slate-800 dark:text-slate-200">{activeCopy.productData.aida.interes}</p>
+                            </div>
+                            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded">
+                              <span className="font-bold text-amber-700 dark:text-amber-300 block mb-1">3. Deseo (Styling, Horma & Ocasión):</span>
+                              <p className="text-slate-800 dark:text-slate-200">{activeCopy.productData.aida.deseo}</p>
+                            </div>
+                            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded">
+                              <span className="font-bold text-emerald-700 dark:text-emerald-300 block mb-1">4. Acción (Llamado a la Compra):</span>
+                              <p className="text-slate-800 dark:text-slate-200">{activeCopy.productData.aida.accion}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
 
                     {/* Tab 1: TikTok & Reels */}
                     <TabsContent value="tiktok" className="space-y-4 pt-3">

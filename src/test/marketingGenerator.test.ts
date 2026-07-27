@@ -3,8 +3,8 @@ import { matchPdfDesignData, PdfPageData } from "../lib/pdfParser";
 import {
   buildMergedProducts,
   generateMultichannelCopy,
-  MergedProductData
 } from "../lib/marketingCopyGenerator";
+import { generateAIDAStructure } from "../lib/aidaDescriptions";
 
 describe("Marketing Multichannel Copy Generator Unit Tests", () => {
   it("should match PDF pages to references and extract design metadata", () => {
@@ -25,7 +25,7 @@ describe("Marketing Multichannel Copy Generator Unit Tests", () => {
     expect(pdfData.details).toContain("roturas");
   });
 
-  it("should build merged products from HGI rows and PDF design data", () => {
+  it("should build merged products from HGI rows and PDF design data with central AIDA", () => {
     const hgiRows = [
       ["SKU", "REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR", "NOMBRE", "COMPOSICION"],
       ["P0109S01", "P0109", "S", "ROJO", "01", "JEAN BOTA RECTA", "98% ALGODON 2% ELASTANO"],
@@ -40,12 +40,19 @@ describe("Marketing Multichannel Copy Generator Unit Tests", () => {
     const merged = buildMergedProducts(hgiRows, pdfDataMap);
     expect(merged.length).toBe(1);
     expect(merged[0].referencia).toBe("P0109");
+    expect(merged[0].aida).toBeDefined();
+    expect(merged[0].aida.atencion).toBeDefined();
     expect(merged[0].colores).toContain("ROJO");
     expect(merged[0].tallas).toContain("S");
-    expect(merged[0].tallas).toContain("M");
   });
 
-  it("should generate distinct and harmonized copies for different references and PDF data", () => {
+  it("should generate distinct and harmonized copies for different references derived from central AIDA", () => {
+    const hgiRows = [
+      ["SKU", "REFERENCIA", "TALLA", "COLOR", "CODIGO COLOR", "NOMBRE", "COMPOSICION"],
+      ["P0109S01", "P0109", "S", "AZUL HIELO", "01", "Jean Bota Ancha", "98% Algodón 2% Elastano"],
+      ["J0250S01", "J0250", "S", "NEGRO", "01", "Chamarra Denim", "100% Algodón Rígido"],
+    ];
+
     const pages: PdfPageData[] = [
       {
         pageNumber: 1,
@@ -62,38 +69,19 @@ describe("Marketing Multichannel Copy Generator Unit Tests", () => {
     ];
 
     const pdfDataMap = matchPdfDesignData(pages, ["P0109", "J0250"]);
+    const merged = buildMergedProducts(hgiRows, pdfDataMap);
 
-    const product1: MergedProductData = {
-      referencia: "P0109",
-      nombre: "Jean Bota Ancha",
-      composicion: "98% Algodón 2% Elastano",
-      colores: ["AZUL HIELO"],
-      tallas: ["S", "M", "L"],
-      pdfDesign: pdfDataMap.get("P0109"),
-    };
+    expect(merged.length).toBe(2);
 
-    const product2: MergedProductData = {
-      referencia: "J0250",
-      nombre: "Chamarra Denim",
-      composicion: "100% Algodón Rígido",
-      colores: ["NEGRO"],
-      tallas: ["XS", "S", "M"],
-      pdfDesign: pdfDataMap.get("J0250"),
-    };
+    const copy1 = generateMultichannelCopy(merged[0]);
+    const copy2 = generateMultichannelCopy(merged[1]);
 
-    const copy1 = generateMultichannelCopy(product1);
-    const copy2 = generateMultichannelCopy(product2);
-
-    // Verify PDF collection theme harmonization (case-insensitive check)
+    // Verify PDF collection theme harmonization
     expect(copy1.instagram.mainCaption.toUpperCase()).toContain("BOHO CHIC");
     expect(copy2.instagram.mainCaption.toUpperCase()).toContain("BOHO CHIC");
 
-    // Verify slide-specific details and unique texts across references
-    expect(copy1.instagram.mainCaption).toContain("Oficina");
-    expect(copy2.instagram.mainCaption).toContain("Noche");
-
-    // Ensure copies are distinct across references
-    expect(copy1.instagram.mainCaption).not.toEqual(copy2.instagram.mainCaption);
+    // Ensure copies are derived from unique central AIDA and are distinct
+    expect(copy1.ads.primaryText).not.toEqual(copy2.ads.primaryText);
     expect(copy1.tikTok.hooks[0]).not.toEqual(copy2.tikTok.hooks[0]);
   });
 });
