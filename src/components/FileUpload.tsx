@@ -6,9 +6,10 @@ interface FileUploadProps {
   onFileSelect: (file: File) => void;
   fileName?: string;
   isLoading?: boolean;
+  acceptedFormats?: string;
 }
 
-const FileUpload = ({ onFileSelect, fileName, isLoading }: FileUploadProps) => {
+const FileUpload = ({ onFileSelect, fileName, isLoading, acceptedFormats = ".xlsx,.xls" }: FileUploadProps) => {
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -41,7 +42,7 @@ const FileUpload = ({ onFileSelect, fileName, isLoading }: FileUploadProps) => {
     >
       <input
         type="file"
-        accept=".xlsx,.xls"
+        accept={acceptedFormats}
         onChange={handleChange}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         disabled={isLoading}
