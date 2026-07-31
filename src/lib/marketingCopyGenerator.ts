@@ -77,15 +77,6 @@ function cleanProductName(nombre: string, referencia: string): string {
   );
 }
 
-function getRefHash(ref: string): number {
-  let hash = 0;
-  for (let i = 0; i < ref.length; i++) {
-    hash = (hash << 5) - hash + ref.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
 /**
  * Aggregates Excel data + PDF metadata and generates unique per-product AIDA descriptions.
  */
@@ -143,51 +134,27 @@ export function buildMergedProducts(
 }
 
 /**
- * Generates multichannel marketing copies with high variety and unique ad primary text per reference.
+ * Generates 100% SPECIFIC multichannel marketing copies without generic AI fillers.
  */
 export function generateMultichannelCopy(product: MergedProductData): ReferenceMultichannelCopy {
   const { referencia, nombre, composicion, colores, tallas, pdfDesign, aida } = product;
-  const h = getRefHash(referencia);
 
   const coloresText = colores.length ? colores.join(", ") : "Variedad de tonos";
   const tallasText = tallas.length ? tallas.join(" - ") : "Tallas estándar";
-  const collectionTitle = pdfDesign?.collectionTitle || "Colección Esenciales & Denim";
-  const occasion = pdfDesign?.occasion || "Casual Chic & Uso Diario";
+  const collectionTitle = pdfDesign?.collectionTitle || "Colección Tendencias Denim";
+  const slideRefNote = pdfDesign?.pageNumber ? `(Diapositiva ${pdfDesign.pageNumber} del PDF)` : "";
 
-  // --- 1. TikTok & Reels (Dynamic Hooks based on Archetype) ---
-  let tiktokHooks: string[] = [];
-  if (aida.archetype === "PAS") {
-    tiktokHooks = [
-      `¿Cansada de prendas que pierden la horma? Mira la REF ${referencia} de Trucco's. 🔥`,
-      `El secreto para estar cómoda y verte impecable todo el día: ${nombre} (REF ${referencia}). ✨`,
-      `POV: Encontraste la ${nombre} perfecta en ${composicion}. 💖`,
-    ];
-  } else if (aida.archetype === "FAB") {
-    tiktokHooks = [
-      `Analizando la confección premium de la REF ${referencia} en ${composicion}. 🔍`,
-      `¿Por qué esta ${nombre} (REF ${referencia}) es diferente a todas las demás? 💡`,
-      `Detalles que enamoran de la nueva colección: REF ${referencia}. ✨`,
-    ];
-  } else if (aida.archetype === "STORYTELLING") {
-    tiktokHooks = [
-      `De la presentación de diseño a tu closet: Conoce la ${nombre} (REF ${referencia}). 👗`,
-      `3 formas de combinar la REF ${referencia} de la colección ${collectionTitle}. ✨`,
-      `El look ideal para ${occasion}: ${nombre} REF ${referencia}. 💖`,
-    ];
-  } else {
-    tiktokHooks = [
-      `🔥 ¡ALERTA BESTSELLER! La REF ${referencia} se agota en tiendas.`,
-      `✨ La prenda más pedida por nuestras mayoristas: ${nombre} (REF ${referencia}).`,
-      `¿Por qué todas están obsesionadas con la REF ${referencia}? Mirala de cerca. 💕`,
-    ];
-  }
-
+  // --- 1. TikTok & Reels (100% Specific Hooks) ---
   const tikTok: TikTokStrategy = {
-    hooks: tiktokHooks,
+    hooks: [
+      `✨ ${nombre} (REF ${referencia}): ${aida.atencion}`,
+      `👗 3 formas de combinar la ${nombre} en tonos ${coloresText}.`,
+      `💖 Tela ${composicion}: así se siente la REF ${referencia} de Trucco's.`,
+    ],
     videoStructure: {
-      hookTime: `0-3s (Gancho): Transición rápida mostrando la ${nombre} puesta. Texto: "${tiktokHooks[0]}"`,
-      detailTime: `3-10s (Demostración): Zoom al tejido en ${composicion}. Audio/Texto: "${aida.interes}"`,
-      ctaTime: `10-15s (Llamado a la Acción): Muestra variantes (${coloresText}). Texto: "${aida.accion}"`,
+      hookTime: `0-3s: Muestra la ${nombre} en modelo o perchero. Texto: "${aida.atencion}"`,
+      detailTime: `3-10s: Acercamiento al tejido en ${composicion}. Explicación: "${aida.interes}"`,
+      ctaTime: `10-15s: Muestra variantes en ${coloresText}. Texto: "${aida.accion}"`,
     },
     hashtags: [
       "#TruccosJeans",
@@ -195,93 +162,71 @@ export function generateMultichannelCopy(product: MergedProductData): ReferenceM
       "#ModaColombia",
       `#REF${referencia}`,
       `#${collectionTitle.replace(/[^a-zA-Z0-9]/g, "")}`,
-      "#JeansColombianos",
+      "#ModaFemenina",
     ],
   };
 
-  // --- 2. Instagram (Layout depends on Archetype) ---
-  let mainCaption = "";
-  if (aida.archetype === "PAS") {
-    mainCaption = `❌ **¿CANSADA DE ROPA INCÓMODA O QUE PIERDE SU FORMA?** ❌\n\n` +
-      `Te presentamos la **${nombre} (REF ${referencia})** ✨\n\n` +
-      `👉 ${aida.atencion}\n\n` +
-      `💡 **¿POR QUÉ TE ENCANTARÁ?**\n${aida.interes}\n\n` +
-      `💖 **EL RESULTADO:**\n${aida.deseo}\n\n` +
-      `🎨 **Colores disponibles:** ${coloresText}\n` +
-      `📏 **Tallas:** ${tallasText}\n\n` +
-      `🛍️ **${aida.accion}** ¡Haz tu pedido mayorista o compra online en el enlace de la bio! ✨`;
-  } else if (aida.archetype === "FAB") {
-    mainCaption = `🔍 **FICHA TÉCNICA DE DISEÑO & CONFECCIÓN** 🔍\n\n` +
-      `**${nombre} (REF ${referencia})** | ${collectionTitle.toUpperCase()}\n\n` +
-      `✨ **Atributo Principal:** ${aida.atencion}\n\n` +
-      `🧶 **Ingeniería Textil:** ${aida.interes}\n\n` +
-      `👗 **Beneficio en Outfit:** ${aida.deseo}\n\n` +
-      `🎨 **Colores:** ${coloresText}\n` +
-      `📏 **Tallas:** ${tallasText}\n\n` +
-      `👉 **${aida.accion}** ¡Haz clic en nuestra biografía! 📩`;
-  } else {
-    mainCaption = `✨ **NUEVO INGRESO | ${collectionTitle.toUpperCase()}** ✨\n\n` +
-      `Conoce la **${nombre} (REF ${referencia})** 💕\n\n` +
-      `🌟 ${aida.atencion}\n\n` +
-      `🌿 **Tacto & Composición:**\n${aida.interes}\n\n` +
-      `💡 **Styling Recomendado:**\n${aida.deseo}\n\n` +
-      `🎨 **Colores:** ${coloresText} | 📏 **Tallas:** ${tallasText}\n\n` +
-      `🛍️ **${aida.accion}** ¡Escríbenos al enlace del perfil! ✨`;
-  }
+  // --- 2. Instagram (Specific Fashion Post) ---
+  const mainCaption = `✨ **NUEVO INGRESO | ${nombre.toUpperCase()} (REF ${referencia})** ✨ ${slideRefNote}\n\n` +
+    `🌸 ${aida.atencion}\n\n` +
+    `🧶 **Tejido & Confección:**\n${aida.interes}\n\n` +
+    `💡 **Versatilidad & Styling:**\n${aida.deseo}\n\n` +
+    `🎨 **Colores disponibles:** ${coloresText}\n` +
+    `📏 **Tallas:** ${tallasText}\n\n` +
+    `🛍️ **${aida.accion}** ¡Haz clic en el enlace del perfil para hacer tu pedido mayorista o compra online! ✨`;
 
   const instagram: InstagramStrategy = {
     mainCaption: fixSpanishOrthography(mainCaption),
     carouselSlides: [
       {
         slideNumber: 1,
-        title: `Lámina 1: Gancho Visual (${aida.archetype})`,
-        content: `Fotografía editorial de ${nombre} (REF ${referencia}).\nTexto: "${aida.atencion}"`,
+        title: `Lámina 1: ${nombre} (REF ${referencia})`,
+        content: `Foto editorial de ${nombre}.\nTexto: "${aida.atencion}"`,
       },
       {
         slideNumber: 2,
-        title: `Lámina 2: Textura Textil`,
+        title: `Lámina 2: Tejido & Acabados`,
         content: `Macro shot del tejido en ${composicion}.\nTexto: "${aida.interes}"`,
       },
       {
         slideNumber: 3,
-        title: `Lámina 3: Outfit & Styling`,
-        content: `Propuesta de combinación para ${occasion}.\nTexto: "${aida.deseo}"`,
+        title: `Lámina 3: Tip de Styling`,
+        content: `Propuesta de outfit.\nTexto: "${aida.deseo}"`,
       },
       {
         slideNumber: 4,
-        title: `Lámina 4: Variantes & Pedido`,
-        content: `Colores (${coloresText}) y Tallas (${tallasText}).\nTexto: "${aida.accion}"`,
+        title: `Lámina 4: Colores & Pedido`,
+        content: `Muestrario de colores (${coloresText}). Tallas: ${tallasText}.\nTexto: "${aida.accion}"`,
       },
     ],
     storyIdeas: [
-      `Story Interactivo: "¿Llevarías la ${nombre} REF ${referencia} para ${occasion}? 🔥 SÍ / ❤️ TOTALMENTE"`,
-      `Story de Detalle: "Toca aquí para ver los acabados en ${composicion} de la REF ${referencia}."`,
+      `Encuesta Interactiva: "¿Combinarías la ${nombre} (REF ${referencia}) para el día ☀️ o para la noche 🌙?"`,
+      `Detalle de Tejido: "Desliza para ver la textura en ${composicion} de la REF ${referencia}."`,
     ],
   };
 
-  // --- 3. Facebook (Conversational Copy) ---
+  // --- 3. Facebook ---
   const facebook: FacebookStrategy = {
     conversationalCopy: fixSpanishOrthography(
-      `Si buscas renovación para tu estilo, la nueva ${nombre} (REF ${referencia}) de la colección "${collectionTitle}" es una apuesta segura.\n\n` +
+      `Conoce la nueva ${nombre} (REF ${referencia}) de la colección "${collectionTitle}".\n\n` +
       `${aida.atencion}\n\n` +
       `${aida.interes}\n\n` +
       `${aida.deseo}\n\n` +
-      `🎨 Disponibilidad: ${coloresText} | 📏 Tallas: ${tallasText}\n\n` +
-      `👉 ${aida.accion} Haz clic abajo para recibir atención personalizada en WhatsApp:`
+      `🎨 Colores disponibles: ${coloresText}\n` +
+      `📏 Tallas: ${tallasText}\n\n` +
+      `👉 ${aida.accion} Haz clic abajo para chatear con nuestras asesoras por WhatsApp:`
     ),
-    callToAction: "Enviar mensaje a WhatsApp Mayorista",
+    callToAction: "Chatear en WhatsApp / Asesoría Mayorista",
   };
 
-  // --- 4. Email Marketing (3 Distinct Subject Styles) ---
-  const emailSubjects = [
-    `✨ ${aida.atencion}`,
-    `Descubre la nueva ${nombre} (REF ${referencia}) - ${collectionTitle}`,
-    `Diseño y confort insuperable: ${nombre} en ${composicion}`,
-  ];
-
+  // --- 4. Email Marketing ---
   const email: EmailMarketingStrategy = {
-    subjectLines: emailSubjects,
-    previewText: aida.interes.substring(0, 110),
+    subjectLines: [
+      `✨ Conoce la nueva ${nombre} (REF ${referencia}) - ${collectionTitle}`,
+      `Detalles y confección: ${nombre} en ${composicion}`,
+      `Nueva llegada: ${nombre} REF ${referencia}`,
+    ],
+    previewText: `${nombre} REF ${referencia} elaborada en ${composicion}.`,
     emailBodyHTML: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #222; line-height: 1.6;">` +
       `<div style="background-color: #111; color: #fff; padding: 20px; text-align: center;">` +
       `<h1 style="margin: 0; font-size: 18px;">TRUCCO'S JEANS | ${collectionTitle.toUpperCase()}</h1>` +
@@ -292,7 +237,8 @@ export function generateMultichannelCopy(product: MergedProductData): ReferenceM
       `<p>${aida.interes}</p>` +
       `<p>${aida.deseo}</p>` +
       `<div style="background-color: #f8f8f8; padding: 15px; border-left: 4px solid #4f46e5; margin: 20px 0;">` +
-      `<p style="margin: 0;"><strong>Colores:</strong> ${coloresText}</p>` +
+      `<p style="margin: 0;"><strong>Composición:</strong> ${composicion}</p>` +
+      `<p style="margin: 5px 0 0 0;"><strong>Colores:</strong> ${coloresText}</p>` +
       `<p style="margin: 5px 0 0 0;"><strong>Tallas:</strong> ${tallasText}</p>` +
       `</div>` +
       `<p style="text-align: center; margin-top: 30px;">` +
@@ -301,39 +247,23 @@ export function generateMultichannelCopy(product: MergedProductData): ReferenceM
       `</div>` +
       `</div>`,
     emailBodyText: fixSpanishOrthography(
-      `Hola,\n\n${aida.atencion}\n\n${aida.interes}\n\n${aida.deseo}\n\nColores: ${coloresText}\nTallas: ${tallasText}\n\n${aida.accion}`
+      `Hola,\n\n${aida.atencion}\n\n${aida.interes}\n\n${aida.deseo}\n\nComposición: ${composicion}\nColores: ${coloresText}\nTallas: ${tallasText}\n\n${aida.accion}`
     ),
   };
 
-  // --- 5. Ads Digitales (Meta & TikTok Ads) UNICO Y VARIADO POR REFERENCIA ---
-  const headlines = [
-    `Efecto Moldeador & Confort | REF ${referencia}`,
-    `Nueva ${nombre} | Tendencia ${collectionTitle}`,
-    `Calidad Premium en ${composicion} | REF ${referencia}`,
-    `El Fit Perfecto para Tu Día | REF ${referencia}`,
-    `Edición Limitada Trucco's | REF ${referencia}`,
-  ];
-
-  const primaryTextOptions = [
-    `${aida.atencion} ${aida.interes} ${aida.accion}`,
-    `Descubre la ${nombre} (REF ${referencia}). ${aida.interes} ${aida.deseo} ¡Pídela hoy con envío seguro!`,
-    `¿Buscas ropa versátil para ${occasion}? La ${nombre} (REF ${referencia}) elaborada en ${composicion} es tu mejor opción. ${aida.accion}`,
-    `${aida.atencion} Confeccionada con tecnología textil en ${composicion} para asegurar un ajuste perfecto. ${aida.accion}`,
-  ];
-
-  const selectedHeadline = headlines[h % headlines.length];
-  const selectedPrimaryText = primaryTextOptions[h % primaryTextOptions.length];
+  // --- 5. Ads Digitales (`ADS TEXTO PRIMARIO` 100% SPECIFIC & ZERO FILLER) ---
+  const adsPrimaryText = `${nombre} (REF ${referencia}) elaborada en ${composicion}. ${aida.atencion} ${aida.interes} Disponible en tallas ${tallasText} en tonos ${coloresText}. ¡Pídela hoy con envío seguro a todo el país!`;
 
   const ads: AdsDigitalStrategy = {
-    headline: fixSpanishOrthography(selectedHeadline),
-    primaryText: fixSpanishOrthography(selectedPrimaryText),
+    headline: fixSpanishOrthography(`${nombre} REF ${referencia} | ${collectionTitle}`),
+    primaryText: fixSpanishOrthography(adsPrimaryText),
     angleA: {
-      title: "Ángulo A: Confección & Confort (Interés AIDA)",
-      text: fixSpanishOrthography(`${aida.interes} Disponible en tallas ${tallasText}.`),
+      title: "Ángulo A: Confección & Tejido",
+      text: fixSpanishOrthography(`${nombre} (REF ${referencia}): ${aida.interes} Tallas ${tallasText}.`),
     },
     angleB: {
-      title: "Ángulo B: Estilo & Ocasión (Deseo AIDA)",
-      text: fixSpanishOrthography(`${aida.deseo} Ideal para ${occasion}.`),
+      title: "Ángulo B: Estilo & Ocasión",
+      text: fixSpanishOrthography(`${nombre} (REF ${referencia}): ${aida.deseo}`),
     },
   };
 
@@ -355,7 +285,7 @@ export function exportMarketingGridToExcel(copies: ReferenceMultichannelCopy[], 
   const headers = [
     "REFERENCIA",
     "NOMBRE PRENDA",
-    "ARQUETIPO PUBLICITARIO",
+    "CATEGORÍA / ARQUETIPO",
     "COLECCIÓN / MOOD PDF",
     "COMPOSICIÓN",
     "COLORES",

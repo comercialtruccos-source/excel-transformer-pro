@@ -1,20 +1,6 @@
 import { fixSpanishOrthography } from "./spanishOrthography";
 import { PdfDesignData } from "./pdfParser";
 
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function pick<T>(arr: T[], hash: number, offset = 0): T {
-  return arr[(hash + offset) % arr.length];
-}
-
 export function getModelSize(referencia: string): string {
   const ref = referencia.trim().toUpperCase();
   if (ref.startsWith("P")) return "XL";
@@ -23,7 +9,7 @@ export function getModelSize(referencia: string): string {
 }
 
 export interface AIDAStructure {
-  archetype: "PAS" | "FAB" | "STORYTELLING" | "HYPE" | "VERSATILITY" | "SCULPTING";
+  archetype: string;
   atencion: string;
   interes: string;
   deseo: string;
@@ -32,88 +18,72 @@ export interface AIDAStructure {
   fullText: string;
 }
 
-// ===== ARCHETYPE 1: PAS (Problem - Agitate - Solution) =====
-const pasAtencion = [
-  (n: string, ref: string) => `¿Cansada de prendas que pierden la forma o aprietan a mitad del día? Conoce la ${n} (REF ${ref}).`,
-  (n: string, ref: string) => `¿Buscas esa prenda que arme increíble sin sacrificar tu libertad de movimiento? La ${n} (REF ${ref}) es la respuesta.`,
-  (n: string, ref: string) => `El dilema de encontrar ropa elegante y realmente cómoda termina con la ${n} (REF ${ref}).`,
-  (n: string, ref: string) => `¿Te cuesta armar outfits rápidos sin caer en lo básico? La ${n} (REF ${ref}) resuelve tu look en segundos.`,
-];
+/**
+ * Parses product name to extract micro design features (necklines, sleeves, accents, silhouettes)
+ */
+function parseProductMicroDetails(nombre: string): {
+  category: string;
+  neckline?: string;
+  sleeves?: string;
+  accents: string[];
+  silhouette?: string;
+} {
+  const n = nombre.toLowerCase();
+  const accents: string[] = [];
 
-const pasInteres = [
-  (c: string, det: string) => `Desarrollada en ${c}, su tejido de ingeniería textil resuelve la rigidez habitual. Incorpora ${det}, garantizando suavidad y frescura constante.`,
-  (c: string, det: string) => `Confeccionada en ${c}, evita deformaciones y arrugas excesivas. Sus atributos (${det}) brindan el ajuste anatómico que tu cuerpo necesita.`,
-  (c: string, det: string) => `Gracias a su composición en ${c}, olvídate de telas ásperas. Su estructura con ${det} acompaña tus movimientos con absoluta ligereza.`,
-];
+  // Detect category
+  let category = "Prenda";
+  if (n.includes("blusa")) category = "Blusa";
+  else if (n.includes("jean")) category = "Jean";
+  else if (n.includes("pantalon") || n.includes("pantalón")) category = "Pantalón";
+  else if (n.includes("chamarra") || n.includes("chaqueta")) category = "Chaqueta";
+  else if (n.includes("vestido")) category = "Vestido";
+  else if (n.includes("enterizo") || n.includes("jumpsuit")) category = "Enterizo";
+  else if (n.includes("top")) category = "Top";
+  else if (n.includes("camisa")) category = "Camisa";
 
-const pasDeseo = [
-  (st: string, occ: string) => `Siente la tranquilidad de lucir impecable en ${occ}. Olvídate de ajustar tu ropa a cada instante. Tip de styling: ${st}.`,
-  (st: string, occ: string) => `Proyecta una imagen profesional y estilizada en ${occ}. Disfruta la confianza de vestir una prenda impecable. Combínala con: ${st}.`,
-];
+  // Neckline
+  let neckline: string | undefined;
+  if (n.includes("escote en v") || n.includes("escote v")) neckline = "escote en V";
+  else if (n.includes("cuello camisero")) neckline = "cuello camisero";
+  else if (n.includes("cuello alto")) neckline = "cuello alto";
+  else if (n.includes("escote cruzado")) neckline = "escote cruzado";
+  else if (n.includes("cuello redondo")) neckline = "cuello redondo";
+  else if (n.includes("escote bandeja")) neckline = "escote bandeja";
 
-// ===== ARCHETYPE 2: FAB (Feature - Advantage - Benefit) =====
-const fabAtencion = [
-  (n: string, ref: string) => `Ingeniería de diseño y alta confección: descubre los secretos de la ${n} (REF ${ref}).`,
-  (n: string, ref: string) => `Detalles premium que marcan la diferencia. Presentamos la nueva ${n} (REF ${ref}).`,
-  (n: string, ref: string) => `Calidad textil y confección de vanguardia en la ${n} (REF ${ref}).`,
-  (n: string, ref: string) => `Innovación en cada costura: así es la ${n} (REF ${ref}) de la nueva colección.`,
-];
+  // Sleeves
+  let sleeves: string | undefined;
+  if (n.includes("manga corta")) sleeves = "manga corta";
+  else if (n.includes("manga larga")) sleeves = "manga larga";
+  else if (n.includes("sisa") || n.includes("sin manga")) sleeves = "sisa";
+  else if (n.includes("manga 3/4")) sleeves = "manga 3/4";
+  else if (n.includes("manga bombacha") || n.includes("manga abullonada")) sleeves = "manga bombacha";
 
-const fabInteres = [
-  (c: string, det: string) => `Característica principal: Tejido de alta densidad en ${c}. Ventaja: excelente flexibilidad y transpirabilidad. Beneficio: confort prolongado y resistencia lavado tras lavado (${det}).`,
-  (c: string, det: string) => `Tejida en ${c} con acabado de alta definición. Permite una recuperación elástica inmediata y resalta atributos clave: ${det}.`,
-];
+  // Accents & Embellishments
+  if (n.includes("perla")) accents.push("detalles de perlas");
+  if (n.includes("brillo") || n.includes("lurex")) accents.push("acabado con destellos de brillo");
+  if (n.includes("tacha") || n.includes("remache")) accents.push("aplicaciones de tachas");
+  if (n.includes("bordado")) accents.push("bordado exclusivo");
+  if (n.includes("encaje")) accents.push("detalles en encaje");
+  if (n.includes("estampado")) accents.push("estampado de temporada");
+  if (n.includes("lazo") || n.includes("amarradura")) accents.push("lazo ajustable");
+  if (n.includes("rotura") || n.includes("destroy")) accents.push("detalles destruidos de tendencia");
+  if (n.includes("cierre") || n.includes("cremallera")) accents.push("cierre metálico");
 
-const fabDeseo = [
-  (st: string, occ: string) => `Disfruta de una prenda versátil para ${occ} que mantiene su color y estructura intactos. Sugerencia de styling: ${st}.`,
-  (st: string, occ: string) => `Una inversión inteligente para tu armario. Perfecta para un look de ${occ}. Llévala con: ${st}.`,
-];
+  // Silhouette / Cut
+  let silhouette: string | undefined;
+  if (n.includes("bota ancha")) silhouette = "corte bota ancha";
+  else if (n.includes("bota recta")) silhouette = "corte bota recta";
+  else if (n.includes("wide leg")) silhouette = "silueta wide leg";
+  else if (n.includes("skinny")) silhouette = "corte ajustado skinny";
+  else if (n.includes("oversize") || n.includes("holgado")) silhouette = "silueta oversize de calce holgado";
+  else if (n.includes("plus size")) silhouette = "corte Plus Size anatómico";
 
-// ===== ARCHETYPE 3: STORYTELLING & TENDENCIA =====
-const storyAtencion = [
-  (n: string, ref: string) => `Directo desde el taller de diseño: la inspiración detrás de la ${n} (REF ${ref}).`,
-  (n: string, ref: string) => `Cuando la tendencia y el arte de la confección se unen, nace la ${n} (REF ${ref}).`,
-  (n: string, ref: string) => `Una declaración de estilo contemporáneo: así conceptualizamos la ${n} (REF ${ref}).`,
-];
-
-const storyInteres = [
-  (c: string, det: string) => `Inspirada en el equilibrio entre sofisticación y espontaneidad, confeccionada en ${c}. Destaca por sus acabados en ${det}.`,
-  (c: string, det: string) => `Creada para contar una historia de moda sin esfuerzo. Su composición en ${c} se enriquece con detalles de ${det}.`,
-];
-
-const storyDeseo = [
-  (st: string, occ: string) => `Ideal para expresar tu personalidad en ${occ}. Recomendación del departamento de diseño: ${st}.`,
-  (st: string, occ: string) => `Eleva tu presencia en ${occ} con una pieza con alma. Propuesta de styling: ${st}.`,
-];
-
-// ===== ARCHETYPE 4: HYPE & BESTSELLER =====
-const hypeAtencion = [
-  (n: string, ref: string) => `🔥 ¡ALERTA TENDENCIA! La ${n} (REF ${ref}) se perfila como la favorita de la temporada.`,
-  (n: string, ref: string) => `✨ La prenda más solicitada en catálogo: ${n} (REF ${ref}).`,
-  (n: string, ref: string) => `⚡ ¡Nuevo Best-Seller! Descubre por qué todas aman la ${n} (REF ${ref}).`,
-];
-
-const hypeInteres = [
-  (c: string, det: string) => `Elaborada en ${c}, su éxito radica en la combinación de confort supremo y detalles visuales impactantes: ${det}.`,
-  (c: string, det: string) => `Confeccionada en ${c}, esta pieza ha conquistado a nuestras clientes por su calce favorecedor y acabados en ${det}.`,
-];
-
-const hypeDeseo = [
-  (st: string, occ: string) => `Asegura tu estilo para ${occ} antes de que se agoten las existencias. Styling recomendado: ${st}.`,
-  (st: string, occ: string) => `Pídela hoy y sé la primera en lucirla en ${occ}. Combínala así: ${st}.`,
-];
-
-// ===== ACCIONES DINÁMICAS =====
-const accionesVariadas = [
-  () => `Solicita tu pedido hoy mismo antes de que se agote en inventario.`,
-  () => `Haz clic para incorporar esta pieza clave a tu armario esta temporada.`,
-  () => `Agrégala a tu carrito y comprueba por ti misma la diferencia de confección.`,
-  () => `Escríbenos para catálogo mayorista o realiza tu compra en nuestra tienda online.`,
-  () => `No dejes pasar la oportunidad de estrenar tu nuevo look favorito.`,
-];
+  return { category, neckline, sleeves, accents, silhouette };
+}
 
 /**
- * Generates structured AIDA with distinct copy archetypes per reference
+ * Builds 100% SPECIFIC AIDA copy without generic AI filler phrases.
  */
 export function generateAIDAStructure(
   nombre: string,
@@ -135,56 +105,45 @@ export function generateAIDAStructure(
       .trim()
   );
 
+  const micro = parseProductMicroDetails(nombre);
   const tallaMod = getModelSize(referencia);
-  const h = hashString(referencia + nombre);
 
-  const mood = pdfDesign?.collectionTitle || "Tendencia Denim & Esenciales";
-  const occ = pdfDesign?.occasion || "Casual Chic & Diario";
-  const det = pdfDesign?.details?.length ? pdfDesign.details.join(", ") : "Horma anatómica y diseño exclusivo";
-  const st = pdfDesign?.styling || "Combínalo con blazer o chaqueta denim para elevar tu estilo.";
+  const mood = pdfDesign?.collectionTitle || "Colección Tendencias Denim";
+  const occ = pdfDesign?.occasion || "Uso Diario & Casual Chic";
+  const st = pdfDesign?.styling || "Combínalo con pantalones de tiro alto o jeans para un outfit impecable.";
 
-  // Select Archetype dynamically based on hash
-  const archetypes: AIDAStructure["archetype"][] = ["PAS", "FAB", "STORYTELLING", "HYPE", "VERSATILITY", "SCULPTING"];
-  const archetype = archetypes[h % archetypes.length];
+  // Build specific feature phrase
+  const featureParts: string[] = [];
+  if (micro.neckline) featureParts.push(`con ${micro.neckline}`);
+  if (micro.sleeves) featureParts.push(micro.sleeves);
+  if (micro.silhouette) featureParts.push(micro.silhouette);
+  if (micro.accents.length) featureParts.push(`y ${micro.accents.join(" y ")}`);
 
-  let atencion: string;
-  let interes: string;
-  let deseo: string;
+  const specificFeatureDesc = featureParts.length ? featureParts.join(" ") : "con detalles de confección exclusiva";
 
-  if (archetype === "PAS") {
-    atencion = pick(pasAtencion, h, 0)(nombreClean, referencia);
-    interes = pick(pasInteres, h, 1)(compClean, det);
-    deseo = pick(pasDeseo, h, 2)(st, occ);
-  } else if (archetype === "FAB") {
-    atencion = pick(fabAtencion, h, 0)(nombreClean, referencia);
-    interes = pick(fabInteres, h, 1)(compClean, det);
-    deseo = pick(fabDeseo, h, 2)(st, occ);
-  } else if (archetype === "STORYTELLING") {
-    atencion = pick(storyAtencion, h, 0)(nombreClean, referencia);
-    interes = pick(storyInteres, h, 1)(compClean, det);
-    deseo = pick(storyDeseo, h, 2)(st, occ);
-  } else {
-    atencion = pick(hypeAtencion, h, 0)(nombreClean, referencia);
-    interes = pick(hypeInteres, h, 1)(compClean, det);
-    deseo = pick(hypeDeseo, h, 2)(st, occ);
-  }
+  // Build 100% SPECIFIC AIDA blocks (No generic filler)
+  const atencion = `${nombreClean} (REF ${ref}) ${specificFeatureDesc}. Una pieza pensada para destacar dentro de la colección ${mood}.`;
 
-  const accion = pick(accionesVariadas, h, 4)();
+  const interes = `Confeccionada en ${compClean}, su tejido ofrece una sensación suave al tacto y excelente flexibilidad. ${pdfDesign?.washOrFabricNotes || "Conserva su horma y color lavado tras lavado."}`;
+
+  const deseo = `Ideal para lucir en ${occ}. Su diseño resalta lo mejor de tu figura brindando confort ininterrumpido. ${pdfDesign?.designNotes ? `Nota de diseño: "${pdfDesign.designNotes}". ` : ""}${st}`;
+
+  const accion = `Disponible en catálogo. Solicita la REF ${ref} en tus tallas y tonos preferidos hoy mismo.`;
 
   const fullHTML = `<p><strong>${atencion}</strong></p>
 <p>${interes}</p>
 <p>${deseo}</p>
 <p><strong>${accion}</strong></p>
 <br>
-<p><strong>REF:</strong> ${referencia}</p>
-<p><strong>Composición:</strong> ${compClean}</p>
-<p><strong>Colección:</strong> ${mood}</p>
-<p><strong>Talla de Modelo:</strong> Talla ${tallaMod}</p>`;
+<p><strong>REFERENCIA:</strong> ${referencia}</p>
+<p><strong>COMPOSICIÓN:</strong> ${compClean}</p>
+<p><strong>COLECCIÓN:</strong> ${mood}</p>
+<p><strong>TALLA DE MODELO:</strong> Talla ${tallaMod}</p>`;
 
   const fullText = `${atencion}\n\n${interes}\n\n${deseo}\n\n${accion}`;
 
   return {
-    archetype,
+    archetype: micro.category,
     atencion: fixSpanishOrthography(atencion),
     interes: fixSpanishOrthography(interes),
     deseo: fixSpanishOrthography(deseo),
