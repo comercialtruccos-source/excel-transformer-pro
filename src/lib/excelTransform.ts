@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import { generateAIDADescription } from "./aidaDescriptions";
-import { fixSpanishOrthography } from "./spanishOrthography";
+import { fixSpanishOrthography, capitalizeWords } from "./spanishOrthography";
 
 export interface TransformResult {
   original: string[][];
@@ -141,14 +141,42 @@ function findColorColumns(headers: string[]): { colorCols: number[]; refCol: num
     
     if (upperHeader.includes("COLOR") || upperHeader.includes("COLOUR")) {
       colorCols.push(index);
-    } else if (upperHeader === "REFERENCIA" || upperHeader === "REF" || upperHeader === "SKU" || upperHeader === "CODIGO") {
-      refCol = index;
-    } else if (upperHeader.includes("TALLA") || upperHeader.includes("SIZE") || upperHeader.includes("SET")) {
-      sizeCol = index;
-    } else if (upperHeader === "NOMBRE") {
-      nombreCol = index;
-    } else if (upperHeader === "COMPOSICION" || upperHeader === "COMPOSICIÓN") {
-      composicionCol = index;
+    } else if (
+      upperHeader === "REFERENCIA" ||
+      upperHeader === "REF" ||
+      upperHeader === "REF." ||
+      upperHeader === "SKU" ||
+      upperHeader === "CODIGO" ||
+      upperHeader === "CÓDIGO" ||
+      upperHeader.startsWith("REF ") ||
+      upperHeader.startsWith("REF_")
+    ) {
+      if (refCol === -1) refCol = index;
+    } else if (
+      upperHeader.includes("TALLA") ||
+      upperHeader.includes("SIZE") ||
+      upperHeader.includes("SET")
+    ) {
+      if (sizeCol === -1) sizeCol = index;
+    } else if (
+      upperHeader.includes("COMPOSICI") ||
+      upperHeader.includes("MATERIAL") ||
+      upperHeader.includes("TELA") ||
+      upperHeader === "COMP" ||
+      upperHeader === "COMP."
+    ) {
+      if (composicionCol === -1) composicionCol = index;
+    } else if (
+      upperHeader === "NOMBRE" ||
+      upperHeader.includes("NOMBRE") ||
+      upperHeader.includes("DESCRIPCI") ||
+      upperHeader.includes("PRENDA") ||
+      upperHeader.includes("PRODUCTO") ||
+      upperHeader.includes("DETALLE") ||
+      upperHeader.includes("ARTICULO") ||
+      upperHeader.includes("ARTÍCULO")
+    ) {
+      if (nombreCol === -1) nombreCol = index;
     }
   });
   
@@ -205,7 +233,7 @@ export function formatComposicionForTitle(comp: string): string {
   
   const materials = words
     .filter(w => w.length > 2) // ignorar posibles conectores cortos si no son materiales
-    .map(w => w.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
+    .map(w => capitalizeWords(w));
     
   if (materials.length === 0) return "";
   if (materials.length === 1) return materials[0];
@@ -222,9 +250,7 @@ function generateProductTitle(nombre: string, referencia: string, composicion: s
   const isTruccos = /trucco/i.test(vendor);
   
   const nombreCapitalized = fixSpanishOrthography(
-    nombre
-      .toLowerCase()
-      .replace(/\b\w/g, (c) => c.toUpperCase())
+    capitalizeWords(nombre)
   );
   
   const refPrefix = referencia.charAt(0).toUpperCase();
@@ -365,10 +391,12 @@ export function transformToShopifyCSV(transformedData: string[][], config: Shopi
       const [sku, , talla, color, colorCode, nombre, composicion] = variant;
       const isFirstVariant = index === 0;
       
-      // Generar descripción AIDA si hay nombre y composición
+      // Generar SIEMPRE descripción AIDA para la primera variante
       let description = config.description;
-      if (isFirstVariant && nombre && composicion) {
-        description = generateAIDADescription(nombre, composicion, referencia);
+      if (isFirstVariant) {
+        const effectiveNombre = nombre || `Prenda ${referencia}`;
+        const effectiveComposicion = composicion || "Tejido de alta calidad y confección superior";
+        description = generateAIDADescription(effectiveNombre, effectiveComposicion, referencia);
       }
       
       // Generar título del producto basado en nombre, referencia y composición

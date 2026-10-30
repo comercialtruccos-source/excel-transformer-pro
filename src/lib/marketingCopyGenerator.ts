@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import { PdfDesignData } from "./pdfParser";
 import { generateAIDAStructure, AIDAStructure } from "./aidaDescriptions";
-import { fixSpanishOrthography } from "./spanishOrthography";
+import { fixSpanishOrthography, capitalizeWords } from "./spanishOrthography";
 
 export interface MergedProductData {
   referencia: string;
@@ -70,11 +70,7 @@ export interface ReferenceMultichannelCopy {
 
 function cleanProductName(nombre: string, referencia: string): string {
   if (!nombre) return `Prenda REF ${referencia}`;
-  return fixSpanishOrthography(
-    nombre
-      .toLowerCase()
-      .replace(/\b\w/g, (c) => c.toUpperCase())
-  );
+  return fixSpanishOrthography(capitalizeWords(nombre));
 }
 
 /**

@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import { loadColorCatalog, formatComposicionForTitle } from "./excelTransform";
 import { generateAIDADescription, getModelSize } from "./aidaDescriptions";
-import { fixSpanishOrthography } from "./spanishOrthography";
+import { fixSpanishOrthography, capitalizeWords } from "./spanishOrthography";
 
 // Shopify CSV column headers
 export const SHOPIFY_HEADERS = [
@@ -213,14 +213,43 @@ function findColumns(headers: string[]): {
     
     if (upperHeader.includes("COLOR") || upperHeader.includes("COLOUR")) {
       colorCols.push(index);
-    } else if (upperHeader === "REFERENCIA" || upperHeader === "REF" || upperHeader === "SKU" || upperHeader === "CODIGO") {
-      refCol = index;
-    } else if (upperHeader.includes("TALLA") || upperHeader.includes("SIZE") || upperHeader === "SET TALLAS") {
-      sizeCol = index;
-    } else if (upperHeader === "NOMBRE") {
-      nombreCol = index;
-    } else if (upperHeader === "COMPOSICION" || upperHeader === "COMPOSICIÓN") {
-      composicionCol = index;
+    } else if (
+      upperHeader === "REFERENCIA" ||
+      upperHeader === "REF" ||
+      upperHeader === "REF." ||
+      upperHeader === "SKU" ||
+      upperHeader === "CODIGO" ||
+      upperHeader === "CÓDIGO" ||
+      upperHeader.startsWith("REF ") ||
+      upperHeader.startsWith("REF_")
+    ) {
+      if (refCol === -1) refCol = index;
+    } else if (
+      upperHeader.includes("TALLA") ||
+      upperHeader.includes("SIZE") ||
+      upperHeader.includes("SET TALLAS") ||
+      upperHeader === "SET"
+    ) {
+      if (sizeCol === -1) sizeCol = index;
+    } else if (
+      upperHeader.includes("COMPOSICI") ||
+      upperHeader.includes("MATERIAL") ||
+      upperHeader.includes("TELA") ||
+      upperHeader === "COMP" ||
+      upperHeader === "COMP."
+    ) {
+      if (composicionCol === -1) composicionCol = index;
+    } else if (
+      upperHeader === "NOMBRE" ||
+      upperHeader.includes("NOMBRE") ||
+      upperHeader.includes("DESCRIPCI") ||
+      upperHeader.includes("PRENDA") ||
+      upperHeader.includes("PRODUCTO") ||
+      upperHeader.includes("DETALLE") ||
+      upperHeader.includes("ARTICULO") ||
+      upperHeader.includes("ARTÍCULO")
+    ) {
+      if (nombreCol === -1) nombreCol = index;
     }
   });
   
@@ -247,10 +276,7 @@ function generateHandle(referencia: string): string {
 function generateTitle(variant: ProductVariant, _template: string, vendor: string = ""): string {
   const ref = variant.referencia.trim().toUpperCase();
   const nombreCap = fixSpanishOrthography(
-    variant.nombre
-      .toLowerCase()
-      .replace(/\b\w/g, (c) => c.toUpperCase())
-      .trim()
+    capitalizeWords(variant.nombre.trim())
   );
 
   const isTruccos = /trucco/i.test(vendor);
@@ -361,10 +387,20 @@ export function transformToShopifyFormat(
     let isFirstRow = true;
 
     const productTitle = generateTitle(firstVariant, config.titleTemplate, config.vendor);
-    const productDescription =
-      firstVariant.nombre && firstVariant.composicion
-        ? generateAIDADescription(firstVariant.nombre, firstVariant.composicion, firstVariant.referencia)
-        : generateBody(firstVariant.referencia, config.bodyTemplate);
+
+    // Generar SIEMPRE descripción en formato AIDA optimizado
+    const effectiveNombre = firstVariant.nombre || `Prenda ${firstVariant.referencia}`;
+    const effectiveComposicion = firstVariant.composicion || "Tejido de alta calidad y confección superior";
+
+    const isCustomTemplate =
+      config.bodyTemplate &&
+      !config.bodyTemplate.includes("Producto de alta calidad - Referencia:") &&
+      !config.bodyTemplate.includes("AIDA") &&
+      config.bodyTemplate.trim().length > 0;
+
+    const productDescription = isCustomTemplate
+      ? generateBody(firstVariant.referencia, config.bodyTemplate)
+      : generateAIDADescription(effectiveNombre, effectiveComposicion, firstVariant.referencia);
     const imageUrl = config.imageBaseUrl
       ? `${config.imageBaseUrl}${firstVariant.referencia}.jpg`
       : "";

@@ -35,7 +35,7 @@ const Index = () => {
     tags: "",
     price: "0",
     published: false,
-    description: "<p>100% ALGODÓN</p>",
+    description: "AIDA",
   });
 
   // Cargar catálogo de colores al iniciar

@@ -1,4 +1,4 @@
-import { fixSpanishOrthography } from "./spanishOrthography";
+import { fixSpanishOrthography, capitalizeWords } from "./spanishOrthography";
 import { PdfDesignData } from "./pdfParser";
 
 export function getModelSize(referencia: string): string {
@@ -21,14 +21,14 @@ export interface AIDAStructure {
 /**
  * Parses product name to extract micro design features (necklines, sleeves, accents, silhouettes)
  */
-function parseProductMicroDetails(nombre: string): {
+function parseProductMicroDetails(nombre: string = ""): {
   category: string;
   neckline?: string;
   sleeves?: string;
   accents: string[];
   silhouette?: string;
 } {
-  const n = nombre.toLowerCase();
+  const n = (nombre || "").toLowerCase();
   const accents: string[] = [];
 
   // Detect category
@@ -91,22 +91,24 @@ export function generateAIDAStructure(
   referencia: string,
   pdfDesign?: PdfDesignData
 ): AIDAStructure {
-  const ref = referencia.trim().toUpperCase();
+  const ref = (referencia || "").trim().toUpperCase();
+  const rawNombre = (nombre || "").trim();
   const nombreClean = fixSpanishOrthography(
-    nombre
-      .toLowerCase()
-      .replace(/\b\w/g, (c) => c.toUpperCase())
+    capitalizeWords(rawNombre || `Prenda REF ${ref}`)
   );
 
-  const compClean = fixSpanishOrthography(
-    composicion
-      .replace(/%/g, "% ")
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  const rawComp = (composicion || "").trim();
+  const compClean = rawComp
+    ? fixSpanishOrthography(
+        rawComp
+          .replace(/%/g, "% ")
+          .replace(/\s+/g, " ")
+          .trim()
+      )
+    : "100% Algodón Premium";
 
-  const micro = parseProductMicroDetails(nombre);
-  const tallaMod = getModelSize(referencia);
+  const micro = parseProductMicroDetails(rawNombre || nombreClean);
+  const tallaMod = getModelSize(referencia || "");
 
   const mood = pdfDesign?.collectionTitle || "Colección Tendencias Denim";
   const occ = pdfDesign?.occasion || "Uso Diario & Casual Chic";
@@ -135,7 +137,7 @@ export function generateAIDAStructure(
 <p>${deseo}</p>
 <p><strong>${accion}</strong></p>
 <br>
-<p><strong>REFERENCIA:</strong> ${referencia}</p>
+<p><strong>REFERENCIA:</strong> ${referencia || ref}</p>
 <p><strong>COMPOSICIÓN:</strong> ${compClean}</p>
 <p><strong>COLECCIÓN:</strong> ${mood}</p>
 <p><strong>TALLA DE MODELO:</strong> Talla ${tallaMod}</p>`;

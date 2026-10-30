@@ -29,7 +29,7 @@ const defaultConfig: ShopifyConfig = {
     vendor: "Trucco's Jeans",
     productType: "Jeans",
     tags: "",
-    bodyTemplate: "<p>Producto de alta calidad - Referencia: {referencia}</p>",
+    bodyTemplate: "AIDA",
     price: "0",
     compareAtPrice: "",
     published: true,
@@ -152,17 +152,25 @@ const ShopifyConfigForm = ({ onSubmit, isLoading }: ShopifyConfigFormProps) => {
                     </AccordionTrigger>
                     <AccordionContent className="space-y-4 pt-4">
                         <div className="space-y-2">
-                            <Label htmlFor="bodyTemplate">Template de Descripción (HTML)</Label>
-                            <Textarea
-                                id="bodyTemplate"
-                                value={config.bodyTemplate}
-                                onChange={(e) => handleChange("bodyTemplate", e.target.value)}
-                                placeholder="Descripción del producto en HTML"
-                                className="min-h-[120px] font-mono text-sm"
-                            />
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="bodyTemplate">Generación de Descripción</Label>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                    Formato AIDA Activo
+                                </span>
+                            </div>
                             <p className="text-xs text-muted-foreground">
-                                Usa {"{referencia}"} para incluir la referencia. Puedes usar HTML.
+                                Las descripciones se generan automáticamente siguiendo la fórmula persuasiva <strong>AIDA</strong> (Atención, Interés, Deseo, Acción) usando los micro-detalles de la prenda, composición, ocasión y talla de modelo.
                             </p>
+                            <div className="mt-2">
+                                <Label htmlFor="bodyTemplate" className="text-xs text-muted-foreground">Template personalizado (opcional - dejar en blanco para formato AIDA automático)</Label>
+                                <Textarea
+                                    id="bodyTemplate"
+                                    value={config.bodyTemplate === "AIDA" ? "" : config.bodyTemplate}
+                                    onChange={(e) => handleChange("bodyTemplate", e.target.value ? e.target.value : "AIDA")}
+                                    placeholder="Dejar vacío para generar automáticamente en formato AIDA..."
+                                    className="min-h-[90px] font-mono text-sm mt-1"
+                                />
+                            </div>
                         </div>
                     </AccordionContent>
                 </AccordionItem>

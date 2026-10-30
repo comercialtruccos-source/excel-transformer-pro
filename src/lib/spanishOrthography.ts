@@ -93,6 +93,15 @@ function matchCase(original: string, replacement: string): string {
   return replacement;
 }
 
+export function capitalizeWords(str: string): string {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : ""))
+    .join(" ");
+}
+
 export function fixSpanishOrthography(text: string): string {
   if (!text) return text;
   let result = text;
